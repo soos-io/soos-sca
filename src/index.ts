@@ -5,6 +5,7 @@ import * as Path from "path";
 import FormData from "form-data";
 import {
   LogLevel,
+  OnFailure,
   PackageManagerType,
   SOOS_CONSTANTS,
   ScanStatus,
@@ -17,17 +18,16 @@ import {
   getEnvVariable,
   obfuscateProperties,
   sleep,
+  formatBytes,
 } from "@soos-io/api-client/dist/utilities";
-import { OnFailure } from "./utils/enums";
+import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { ArgumentParser } from "argparse";
 import { CONSTANTS } from "./utils/contants";
 import { exit } from "process";
 import SOOSAnalysisApiClient, {
   IUploadManifestFilesResponse,
 } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
-import StringUtilities from "./utils/StringUtilities";
 import SOOSProjectsApiClient from "@soos-io/api-client/dist/api/SOOSProjectsApiClient";
-import { formatBytes } from "./utils/utilities";
 
 interface IManifestFile {
   packageManager: string;
