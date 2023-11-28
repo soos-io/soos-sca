@@ -1,0 +1,43 @@
+{
+  "name": "@soos-io/soos-sca",
+  "version": "0.1.0-pre.2",
+  "description": "SOOS Security Analysis CI",
+  "main": "bin/index.js",
+  "scripts": {
+    "setup:install": "npm install",
+    "setup:clean-install": "npm ci",
+    "setup:update": "npx npm-check -u",
+    "setup:clean": "npx rimraf node_modules && npx rimraf package-lock.json",
+    "build": "tsc",
+    "build:clean": "npx rimraf build",
+    "format": "prettier ./src --check",
+    "format:fix": "prettier ./src --write",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run format && npm run typecheck && npm outdated"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/soos-io/soos-sca.git"
+  },
+  "author": "SOOS",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/soos-io/soos-sca/issues"
+  },
+  "homepage": "https://github.com/soos-io/soos-sca#readme",
+  "dependencies": {
+    "@soos-io/api-client": "0.1.8",
+    "argparse": "^2.0.1",
+    "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "@types/argparse": "^2.0.11",
+    "@types/glob": "^8.1.0",
+    "@types/node": "^20.6.3",
+    "prettier": "^2.8.8",
+    "typescript": "^5.2.2"
+  },
+  "bin": {
+    "soos-sca": "bin/index.js"
+  }
+}
