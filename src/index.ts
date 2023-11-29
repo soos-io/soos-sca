@@ -6,6 +6,7 @@ import FormData from "form-data";
 import {
   LogLevel,
   OnFailure,
+  OutputFormat,
   PackageManagerType,
   SOOS_CONSTANTS,
   ScanStatus,
@@ -53,6 +54,7 @@ interface SOOSSCAAnalysisArgs {
   logLevel: LogLevel;
   onFailure: OnFailure;
   operatingEnvironment: string;
+  outputFormat: OutputFormat;
   packageManagers: Array<string>;
   projectName: string;
   sarif: boolean;
@@ -119,7 +121,7 @@ class SOOSSCAAnalysis {
     });
 
     parser.add_argument("--directoriesToExclude", {
-      help: "Listing of directories (relative to ./) to exclude from the search for manifest files. eg: Correct: bin/start/ | Incorrect: ./bin/start/",
+      help: "Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/**",
       type: (value: string) => {
         return getDirectoriesToExclude(value.split(","));
       },
@@ -128,7 +130,7 @@ class SOOSSCAAnalysis {
     });
 
     parser.add_argument("--filesToExclude", {
-      help: "Listing of files or patterns patterns to exclude from the search for manifest files. eg: **/req**.txt/",
+      help: "Listing of files or patterns patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt",
       type: (value: string) => {
         return value.split(",").map((pattern) => pattern.trim());
       },
@@ -167,6 +169,14 @@ class SOOSSCAAnalysis {
     parser.add_argument("--operatingEnvironment", {
       help: "Set Operating environment for information purposes only.",
       required: false,
+    });
+
+    parser.add_argument("--outputFormat", {
+      help: "Output format for vulnerabilities: only the value SARIF is available at the moment",
+      required: false,
+      type: (value: string) => {
+        return ensureEnumValue(OutputFormat, value);
+      },
     });
 
     parser.add_argument("--packageManagers", {
@@ -227,7 +237,7 @@ class SOOSSCAAnalysis {
     let projectHash: string | undefined;
     let branchHash: string | undefined;
     let analysisId: string | undefined;
-    let isCancelled = false;
+    let isDone = false;
 
     const soosAnalysisApiClient = new SOOSAnalysisApiClient(this.args.apiKey, this.args.apiURL);
     const soosProjectsApiClient = new SOOSProjectsApiClient(
@@ -306,7 +316,7 @@ class SOOSSCAAnalysis {
           status: ScanStatus.Incomplete,
           message: errorMessage,
         });
-        isCancelled = true;
+        isDone = true;
         throw new Error(errorMessage);
       }
 
@@ -384,7 +394,7 @@ class SOOSSCAAnalysis {
           status: ScanStatus.Incomplete,
           message: `Error uploading manifests.`,
         });
-        isCancelled = true;
+        isDone = true;
         throw new Error("Error uploading manifests.");
       }
 
@@ -405,6 +415,34 @@ class SOOSSCAAnalysis {
         scanUrl: result.scanUrl,
       });
 
+      isDone = true;
+
+      if (this.args.outputFormat !== undefined) {
+        soosLogger.info(`Generating SARIF report  ${this.args.projectName}...`);
+        const output = await soosAnalysisApiClient.getFormattedScanResult({
+          clientId: this.args.clientId,
+          projectHash,
+          branchHash,
+          scanType: ScanType.SCA,
+          scanId: analysisId,
+          outputFormat: this.args.outputFormat,
+        });
+        soosLogger.info(`SARIF report generated successfully.`);
+        if (output) {
+          soosLogger.info(`Output ('${this.args.outputFormat}' format):`);
+          soosLogger.info(JSON.stringify(output, null, 2));
+          if (this.args.sourceCodePath) {
+            soosLogger.info(
+              `Writing SARIF report to ${this.args.sourceCodePath}/${CONSTANTS.FILES.SARIF}`
+            );
+            FileSystem.writeFileSync(
+              `${this.args.workingDirectory}/${CONSTANTS.FILES.SARIF}`,
+              JSON.stringify(output, null, 2)
+            );
+          }
+        }
+      }
+
       if (this.args.onFailure === OnFailure.Fail) {
         if (scanStatus === ScanStatus.FailedWithIssues) {
           soosLogger.info("Analysis complete - Failures reported");
@@ -423,7 +461,7 @@ class SOOSSCAAnalysis {
         }
       }
     } catch (error) {
-      if (projectHash && branchHash && analysisId && !isCancelled)
+      if (projectHash && branchHash && analysisId && !isDone)
         await soosAnalysisApiClient.updateScanStatus({
           clientId: this.args.clientId,
           projectHash,

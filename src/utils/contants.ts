@@ -1,4 +1,7 @@
 export const CONSTANTS = {
+  FILES: {
+    SARIF: "results.sarif",
+  },
   SOOS: {
     API_KEY_ENV_VAR: "SOOS_API_KEY",
     CLIENT_ID_ENV_VAR: "SOOS_CLIENT_ID",
