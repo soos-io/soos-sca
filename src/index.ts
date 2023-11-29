@@ -237,7 +237,6 @@ class SOOSSCAAnalysis {
     let projectHash: string | undefined;
     let branchHash: string | undefined;
     let analysisId: string | undefined;
-    let isDone = false;
 
     const soosAnalysisApiClient = new SOOSAnalysisApiClient(this.args.apiKey, this.args.apiURL);
     const soosProjectsApiClient = new SOOSProjectsApiClient(
@@ -307,16 +306,6 @@ class SOOSSCAAnalysis {
         const errorMessage =
           "No valid manifests found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-manifests-found";
 
-        await soosAnalysisApiClient.updateScanStatus({
-          clientId: this.args.clientId,
-          projectHash,
-          branchHash,
-          scanType: ScanType.SCA,
-          scanId: analysisId,
-          status: ScanStatus.Incomplete,
-          message: errorMessage,
-        });
-        isDone = true;
         throw new Error(errorMessage);
       }
 
@@ -385,16 +374,6 @@ class SOOSSCAAnalysis {
       }
 
       if (allUploadsFailed) {
-        await soosAnalysisApiClient.updateScanStatus({
-          clientId: this.args.clientId,
-          projectHash,
-          branchHash,
-          scanType: ScanType.SCA,
-          scanId: analysisId,
-          status: ScanStatus.Incomplete,
-          message: `Error uploading manifests.`,
-        });
-        isDone = true;
         throw new Error("Error uploading manifests.");
       }
 
@@ -414,8 +393,6 @@ class SOOSSCAAnalysis {
         scanStatusUrl: result.scanStatusUrl,
         scanUrl: result.scanUrl,
       });
-
-      isDone = true;
 
       if (this.args.outputFormat !== undefined) {
         soosLogger.info(`Generating SARIF report  ${this.args.projectName}...`);
@@ -461,7 +438,7 @@ class SOOSSCAAnalysis {
         }
       }
     } catch (error) {
-      if (projectHash && branchHash && analysisId && !isDone)
+      if (projectHash && branchHash && analysisId)
         await soosAnalysisApiClient.updateScanStatus({
           clientId: this.args.clientId,
           projectHash,
