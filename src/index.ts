@@ -71,7 +71,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--apiKey", {
       help: "SOOS API Key - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(CONSTANTS.SOOS.API_KEY_ENV_VAR),
+      default: getEnvVariable(CONSTANTS.SOOS.ENVIRONMENT_VARIABLES.API_KEY),
       required: false,
     });
 
@@ -111,7 +111,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--clientId", {
       help: "SOOS Client ID - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(CONSTANTS.SOOS.CLIENT_ID_ENV_VAR),
+      default: getEnvVariable(CONSTANTS.SOOS.ENVIRONMENT_VARIABLES.CLIENT_ID),
       required: false,
     });
 
@@ -433,10 +433,10 @@ class SOOSSCAAnalysis {
           soosLogger.info(JSON.stringify(output, null, 2));
           if (this.args.sourceCodePath) {
             soosLogger.info(
-              `Writing SARIF report to ${this.args.sourceCodePath}/${CONSTANTS.FILES.SARIF}`
+              `Writing SARIF report to ${this.args.sourceCodePath}/${CONSTANTS.FILES.SARIF_OUTPUT}`
             );
             FileSystem.writeFileSync(
-              `${this.args.workingDirectory}/${CONSTANTS.FILES.SARIF}`,
+              `${this.args.workingDirectory}/${CONSTANTS.FILES.SARIF_OUTPUT}`,
               JSON.stringify(output, null, 2)
             );
           }
