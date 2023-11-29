@@ -404,8 +404,8 @@ class SOOSSCAAnalysis {
           scanId: analysisId,
           outputFormat: this.args.outputFormat,
         });
-        soosLogger.info(`SARIF report generated successfully.`);
         if (output) {
+          soosLogger.info(`SARIF report generated successfully.`);
           soosLogger.info(`Output ('${this.args.outputFormat}' format):`);
           soosLogger.info(JSON.stringify(output, null, 2));
           if (this.args.sourceCodePath) {
