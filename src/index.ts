@@ -465,7 +465,7 @@ class SOOSSCAAnalysis {
           scanType: ScanType.SCA,
           scanId: analysisId,
           status: ScanStatus.Error,
-          message: `Error while performing scan.`,
+          message: "Error while performing scan.",
         });
       soosLogger.error(error);
       exit(1);
