@@ -305,8 +305,17 @@ class SOOSSCAAnalysis {
       if (manifestFiles.length === 0) {
         const errorMessage =
           "No valid manifests found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-manifests-found";
-
-        throw new Error(errorMessage);
+        await soosAnalysisApiClient.updateScanStatus({
+          clientId: this.args.clientId,
+          projectHash,
+          branchHash,
+          scanType: ScanType.SCA,
+          scanId: analysisId,
+          status: ScanStatus.Incomplete,
+          message: errorMessage,
+        });
+        soosLogger.error(errorMessage);
+        return;
       }
 
       const filesToUpload = manifestFiles.slice(0, SOOS_CONSTANTS.FileUploads.MaxManifests);
@@ -374,7 +383,17 @@ class SOOSSCAAnalysis {
       }
 
       if (allUploadsFailed) {
-        throw new Error("Error uploading manifests.");
+        await soosAnalysisApiClient.updateScanStatus({
+          clientId: this.args.clientId,
+          projectHash,
+          branchHash,
+          scanType: ScanType.SCA,
+          scanId: analysisId,
+          status: ScanStatus.Incomplete,
+          message: `Error uploading manifests.`,
+        });
+        soosLogger.error("Error uploading manifests.");
+        return;
       }
 
       soosLogger.logLineSeparator();
