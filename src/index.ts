@@ -222,7 +222,8 @@ class SOOSSCAAnalysis {
     let projectHash: string | undefined;
     let branchHash: string | undefined;
     let analysisId: string | undefined;
-    //const filePath = await this.findSbomFilePath();
+    let isCancelled = false;
+
     const soosAnalysisApiClient = new SOOSAnalysisApiClient(this.args.apiKey, this.args.apiURL);
     const soosProjectsApiClient = new SOOSProjectsApiClient(
       this.args.apiKey,
@@ -300,7 +301,7 @@ class SOOSSCAAnalysis {
           status: ScanStatus.Incomplete,
           message: errorMessage,
         });
-
+        isCancelled = true;
         throw new Error(errorMessage);
       }
 
@@ -378,6 +379,8 @@ class SOOSSCAAnalysis {
           status: ScanStatus.Incomplete,
           message: `Error uploading manifests.`,
         });
+        isCancelled = true;
+        throw new Error("Error uploading manifests.");
       }
 
       soosLogger.logLineSeparator();
@@ -415,7 +418,7 @@ class SOOSSCAAnalysis {
         }
       }
     } catch (error) {
-      if (projectHash && branchHash && analysisId)
+      if (projectHash && branchHash && analysisId && !isCancelled)
         await soosAnalysisApiClient.updateScanStatus({
           clientId: this.args.clientId,
           projectHash,
