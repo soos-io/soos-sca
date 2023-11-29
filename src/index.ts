@@ -23,7 +23,7 @@ import {
 } from "@soos-io/api-client/dist/utilities";
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { ArgumentParser } from "argparse";
-import { CONSTANTS } from "./utils/contants";
+import { CONSTANTS } from "./utils/constants";
 import { exit } from "process";
 import SOOSAnalysisApiClient, {
   IUploadManifestFilesResponse,
