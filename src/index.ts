@@ -57,7 +57,6 @@ interface SOOSSCAAnalysisArgs {
   outputFormat: OutputFormat;
   packageManagers: Array<string>;
   projectName: string;
-  sarif: boolean;
   scriptVersion: string;
   sourceCodePath: string;
   verbose: boolean;
@@ -198,12 +197,6 @@ class SOOSSCAAnalysis {
       type: (value: string) => {
         return ensureNonEmptyValue(value, "projectName");
       },
-    });
-
-    parser.add_argument("--sarif", {
-      help: "Generates SARIF report.",
-      action: "store_true",
-      required: false,
     });
 
     parser.add_argument("--scriptVersion", {
@@ -414,7 +407,7 @@ class SOOSSCAAnalysis {
       });
 
       if (this.args.outputFormat !== undefined) {
-        soosLogger.info(`Generating SARIF report  ${this.args.projectName}...`);
+        soosLogger.info(`Generating ${this.args.outputFormat} report  ${this.args.projectName}...`);
         const output = await soosAnalysisApiClient.getFormattedScanResult({
           clientId: this.args.clientId,
           projectHash,
@@ -424,12 +417,15 @@ class SOOSSCAAnalysis {
           outputFormat: this.args.outputFormat,
         });
         if (output) {
-          soosLogger.info(`SARIF report generated successfully.`);
+          soosLogger.info(`${this.args.outputFormat} report generated successfully.`);
           soosLogger.info(`Output ('${this.args.outputFormat}' format):`);
           soosLogger.info(JSON.stringify(output, null, 2));
           if (this.args.sourceCodePath) {
             soosLogger.info(
-              `Writing SARIF report to ${this.args.sourceCodePath}/${CONSTANTS.FILES.SARIF_OUTPUT}`
+              `Writing ${this.args.outputFormat} report to ${Path.join(
+                this.args.sourceCodePath,
+                CONSTANTS.FILES.SARIF_OUTPUT
+              )}`
             );
             FileSystem.writeFileSync(
               `${this.args.workingDirectory}/${CONSTANTS.FILES.SARIF_OUTPUT}`,
@@ -548,8 +544,6 @@ class SOOSSCAAnalysis {
               : manifest.pattern; // wildcard match
 
             const pattern = `**/${manifestGlobPattern}`;
-            soosLogger.info(`Files to exclude: ${this.args.filesToExclude}`);
-            soosLogger.info(`Directories to exclude: ${this.args.directoriesToExclude}`);
             const files = Glob.sync(pattern, {
               ignore: [...(this.args.filesToExclude || []), ...this.args.directoriesToExclude],
               nocase: true,
