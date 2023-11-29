@@ -67,7 +67,7 @@ interface SOOSSCAAnalysisArgs {
 class SOOSSCAAnalysis {
   constructor(private args: SOOSSCAAnalysisArgs) {}
   static parseArgs(): SOOSSCAAnalysisArgs {
-    const parser = new ArgumentParser({ description: "SOOS Csa" });
+    const parser = new ArgumentParser({ description: "SOOS Sca" });
 
     parser.add_argument("--apiKey", {
       help: "SOOS API Key - get yours from https://app.soos.io/integrate/containers",
