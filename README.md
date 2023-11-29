@@ -45,7 +45,7 @@ See [Windows Batch File Gist](https://gist.githubusercontent.com/soostech/37134f
 
 | Argument | Default | Description |
 | --- | --- | --- |
-| `--apiKey` | None | SOOS API Key - get yours from https://app.soos.io/integrate/containers |
+| `--apiKey` | None | SOOS API Key - get yours from https://app.soos.io/integrate/sca
 | `--apiURL` | `https://api.soos.io/api/` | SOOS API URL - Intended for internal use only, do not modify. |
 | `--appVersion` | None | App Version - Intended for internal use only. |
 | `--branchName` | None | The name of the branch from the SCM System. |
@@ -58,7 +58,7 @@ See [Windows Batch File Gist](https://gist.githubusercontent.com/soostech/37134f
 | `--filesToExclude` | None | Listing of files or patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt |
 | `--integrationName` | None | Integration Name - Intended for internal use only. |
 | `--integrationType` | `Script` | Integration Type - Intended for internal use only. |
-| `--logLevel` | `LogLevel.INFO` | Minimum level to show logs: PASS, IGNORE, INFO, WARN or FAIL. |
+| `--logLevel` | `INFO` | Minimum level to show logs: PASS, IGNORE, INFO, WARN or FAIL. |
 | `--onFailure` | `continue_on_failure` | Action to perform when the scan fails. Options: fail_the_build, continue_on_failure. |
 | `--operatingEnvironment` | None | Set Operating environment for information purposes only. |
 | `--outputFormat` | None | Output format for vulnerabilities: only the value SARIF is available at the moment. |
