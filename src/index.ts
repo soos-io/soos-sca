@@ -28,6 +28,7 @@ import SOOSAnalysisApiClient, {
   IUploadManifestFilesResponse,
 } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
 import SOOSProjectsApiClient from "@soos-io/api-client/dist/api/SOOSProjectsApiClient";
+import { getDirectoriesToExclude } from "./utils/utilities";
 
 interface IManifestFile {
   packageManager: string;
@@ -120,13 +121,17 @@ class SOOSSCAAnalysis {
     parser.add_argument("--directoriesToExclude", {
       help: "Listing of directories (relative to ./) to exclude from the search for manifest files. eg: Correct: bin/start/ | Incorrect: ./bin/start/",
       type: (value: string) => {
-        return value.split(",");
+        return getDirectoriesToExclude(value.split(","));
       },
+      default: CONSTANTS.SOOS.DEFAULT_DIRECTORIES_TO_EXCLUDE,
       required: false,
     });
 
     parser.add_argument("--filesToExclude", {
-      help: "Listing of files (relative to ./) to exclude from the search for manifest files. eg: Correct: bin/start/requirements.txt | Incorrect: ./bin/start/requirements.txt",
+      help: "Listing of files or patterns patterns to exclude from the search for manifest files. eg: **/req**.txt/",
+      type: (value: string) => {
+        return value.split(",").map((pattern) => pattern.trim());
+      },
       required: false,
     });
 
@@ -509,9 +514,10 @@ class SOOSSCAAnalysis {
               : manifest.pattern; // wildcard match
 
             const pattern = `**/${manifestGlobPattern}`;
-
+            soosLogger.info(`Files to exclude: ${this.args.filesToExclude}`);
+            soosLogger.info(`Directories to exclude: ${this.args.directoriesToExclude}`);
             const files = Glob.sync(pattern, {
-              ignore: this.args.directoriesToExclude,
+              ignore: [...(this.args.filesToExclude || []), ...this.args.directoriesToExclude],
               nocase: true,
             });
 
