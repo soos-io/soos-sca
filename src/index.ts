@@ -4,6 +4,7 @@ import * as Glob from "glob";
 import * as Path from "path";
 import FormData from "form-data";
 import {
+  IntegrationName,
   LogLevel,
   OnFailure,
   OutputFormat,
@@ -18,7 +19,6 @@ import {
   ensureNonEmptyValue,
   getEnvVariable,
   obfuscateProperties,
-  sleep,
   formatBytes,
 } from "@soos-io/api-client/dist/utilities";
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
@@ -30,6 +30,7 @@ import SOOSAnalysisApiClient, {
 } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
 import SOOSProjectsApiClient from "@soos-io/api-client/dist/api/SOOSProjectsApiClient";
 import { getDirectoriesToExclude } from "./utils/utilities";
+import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
 
 interface IManifestFile {
   packageManager: string;
@@ -49,7 +50,7 @@ interface SOOSSCAAnalysisArgs {
   commitHash: string;
   directoriesToExclude: Array<string>;
   filesToExclude: Array<string>;
-  integrationName: string;
+  integrationName: IntegrationName;
   integrationType: string;
   logLevel: LogLevel;
   onFailure: OnFailure;
@@ -139,6 +140,9 @@ class SOOSSCAAnalysis {
     parser.add_argument("--integrationName", {
       help: "Integration Name - Intended for internal use only.",
       required: false,
+      type: (value: string) => {
+        return ensureEnumValue(IntegrationName, value);
+      },
     });
 
     parser.add_argument("--integrationType", {
@@ -236,38 +240,31 @@ class SOOSSCAAnalysis {
       this.args.apiKey,
       this.args.apiURL.replace("api.", "api-projects.")
     );
-    try {
-      soosLogger.info("Starting SOOS SCA Analysis");
-      soosLogger.info(`Creating scan for project '${this.args.projectName}'...`);
-      soosLogger.info(`Branch Name: ${this.args.branchName}`);
 
-      const result = await soosAnalysisApiClient.createScan({
+    const analysisService = AnalysisService.create(this.args.apiKey, this.args.apiURL);
+
+    try {
+      const result = await analysisService.setupScan({
         clientId: this.args.clientId,
         projectName: this.args.projectName,
+        branchName: this.args.branchName,
         commitHash: this.args.commitHash,
-        branch: this.args.branchName,
         buildVersion: this.args.buildVersion,
         buildUri: this.args.buildUri,
         branchUri: this.args.branchUri,
-        integrationType: this.args.integrationType,
         operatingEnvironment: this.args.operatingEnvironment,
         integrationName: this.args.integrationName,
+        integrationType: this.args.integrationType,
         appVersion: this.args.appVersion,
-        scriptVersion: null,
-        contributingDeveloperAudit: undefined,
+        scriptVersion: this.args.scriptVersion,
+        contributingDeveloperAudit: [],
         scanType: ScanType.SCA,
-        toolName: null,
-        toolVersion: null,
       });
 
       projectHash = result.projectHash;
       branchHash = result.branchHash;
       analysisId = result.analysisId;
 
-      soosLogger.info(`Project Hash: ${projectHash}`);
-      soosLogger.info(`Branch Hash: ${branchHash}`);
-      soosLogger.info(`Scan Id: ${analysisId}`);
-      soosLogger.info("Scan created successfully.");
       soosLogger.logLineSeparator();
 
       const supportedManifestsResponse = await soosAnalysisApiClient.getSupportedManifests({
@@ -390,49 +387,31 @@ class SOOSSCAAnalysis {
       }
 
       soosLogger.logLineSeparator();
-      soosLogger.info("Starting SCA Analysis scan");
-      await soosAnalysisApiClient.startScan({
+      await analysisService.startScan({
         clientId: this.args.clientId,
         projectHash,
-        analysisId: analysisId,
+        analysisId: result.analysisId,
+        scanType: ScanType.SCA,
+        scanUrl: result.scanUrl,
       });
-      soosLogger.info(
-        `Analysis scan started successfully, to see the results visit: ${result.scanUrl}`
-      );
 
-      const scanStatus = await this.waitForScanToFinish({
-        apiClient: soosAnalysisApiClient,
+      const scanStatus = await analysisService.waitForScanToFinish({
         scanStatusUrl: result.scanStatusUrl,
         scanUrl: result.scanUrl,
       });
 
       if (this.args.outputFormat !== undefined) {
-        soosLogger.info(`Generating ${this.args.outputFormat} report  ${this.args.projectName}...`);
-        const output = await soosAnalysisApiClient.getFormattedScanResult({
+        await analysisService.runOutputFormat({
           clientId: this.args.clientId,
-          projectHash,
-          branchHash,
+          projectHash: result.projectHash,
+          projectName: this.args.projectName,
+          branchHash: result.branchHash,
           scanType: ScanType.SCA,
-          scanId: analysisId,
+          analysisId: result.analysisId,
           outputFormat: this.args.outputFormat,
+          sourceCodePath: this.args.sourceCodePath,
+          workingDirectory: this.args.workingDirectory,
         });
-        if (output) {
-          soosLogger.info(`${this.args.outputFormat} report generated successfully.`);
-          soosLogger.info(`Output ('${this.args.outputFormat}' format):`);
-          soosLogger.info(JSON.stringify(output, null, 2));
-          if (this.args.sourceCodePath) {
-            soosLogger.info(
-              `Writing ${this.args.outputFormat} report to ${Path.join(
-                this.args.sourceCodePath,
-                CONSTANTS.FILES.SARIF_OUTPUT
-              )}`
-            );
-            FileSystem.writeFileSync(
-              `${this.args.workingDirectory}/${CONSTANTS.FILES.SARIF_OUTPUT}`,
-              JSON.stringify(output, null, 2)
-            );
-          }
-        }
       }
 
       if (this.args.onFailure === OnFailure.Fail) {
@@ -586,59 +565,6 @@ class SOOSSCAAnalysis {
     soosLogger.info(`${manifestFiles.length} manifest files found.`);
 
     return manifestFiles;
-  }
-
-  private async waitForScanToFinish({
-    apiClient,
-    scanStatusUrl,
-    scanUrl,
-  }: {
-    apiClient: SOOSAnalysisApiClient;
-    scanStatusUrl: string;
-    scanUrl: string;
-  }): Promise<ScanStatus> {
-    const scanStatus = await apiClient.getScanStatus({
-      scanStatusUrl,
-    });
-
-    if (!scanStatus.isComplete) {
-      soosLogger.info(`${StringUtilities.fromCamelToTitleCase(scanStatus.status)}...`);
-      await sleep(CONSTANTS.STATUS.DELAY_TIME);
-      return await this.waitForScanToFinish({ apiClient, scanStatusUrl, scanUrl });
-    }
-
-    if (scanStatus.errors.length > 0) {
-      soosLogger.group("Errors:");
-      soosLogger.warn(JSON.stringify(scanStatus.errors, null, 2));
-      soosLogger.groupEnd();
-    }
-
-    if (scanStatus.isSuccess) {
-      scanStatus.vulnerabilities > 0 || scanStatus.violations > 0;
-    }
-
-    let statusMessage = `Scan ${scanStatus.isSuccess ? "passed" : "failed"}`;
-    if (scanStatus.hasIssues) {
-      const vulnerabilities = StringUtilities.pluralizeTemplate(
-        scanStatus.vulnerabilities,
-        "vulnerability",
-        "vulnerabilities"
-      );
-
-      const violations = StringUtilities.pluralizeTemplate(
-        scanStatus.violations,
-        "violation",
-        "violations"
-      );
-
-      statusMessage = statusMessage.concat(
-        `${scanStatus.isSuccess ? ", but had" : " because of"} ${vulnerabilities} and ${violations}`
-      );
-    }
-
-    const resultMessage = `${statusMessage}. View the results at: ${scanUrl}`;
-    soosLogger.info(resultMessage);
-    return scanStatus.status;
   }
 
   static async createAndRun(): Promise<void> {
