@@ -241,7 +241,7 @@ class SOOSSCAAnalysis {
       this.args.apiURL.replace("api.", "api-projects.")
     );
 
-    const analysisService = AnalysisService.create(this.args.apiKey, this.args.apiURL);
+    const analysisService = new AnalysisService(soosAnalysisApiClient);
 
     try {
       const result = await analysisService.setupScan({
@@ -295,16 +295,15 @@ class SOOSSCAAnalysis {
       if (manifestFiles.length === 0) {
         const errorMessage =
           "No valid manifests found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-manifests-found";
-        await soosAnalysisApiClient.updateScanStatus({
+        await analysisService.updateScanStatus({
           clientId: this.args.clientId,
           projectHash,
           branchHash,
           scanType: ScanType.SCA,
-          scanId: analysisId,
+          analysisId: analysisId,
           status: ScanStatus.Incomplete,
           message: errorMessage,
         });
-        soosLogger.error(errorMessage);
         return;
       }
 
@@ -373,16 +372,15 @@ class SOOSSCAAnalysis {
       }
 
       if (allUploadsFailed) {
-        await soosAnalysisApiClient.updateScanStatus({
+        await analysisService.updateScanStatus({
           clientId: this.args.clientId,
           projectHash,
           branchHash,
           scanType: ScanType.SCA,
-          scanId: analysisId,
+          analysisId: analysisId,
           status: ScanStatus.Incomplete,
           message: `Error uploading manifests.`,
         });
-        soosLogger.error("Error uploading manifests.");
         return;
       }
 
@@ -433,12 +431,12 @@ class SOOSSCAAnalysis {
       }
     } catch (error) {
       if (projectHash && branchHash && analysisId)
-        await soosAnalysisApiClient.updateScanStatus({
+        await analysisService.updateScanStatus({
           clientId: this.args.clientId,
           projectHash,
           branchHash,
           scanType: ScanType.SCA,
-          scanId: analysisId,
+          analysisId: analysisId,
           status: ScanStatus.Error,
           message: "Error while performing scan.",
         });
