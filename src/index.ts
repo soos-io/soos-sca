@@ -71,7 +71,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--apiKey", {
       help: "SOOS API Key - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(CONSTANTS.SOOS.ENVIRONMENT_VARIABLES.API_KEY),
+      default: getEnvVariable(CONSTANTS.SOOS.EnvironmentVariables.ApiKey),
       required: false,
     });
 
@@ -111,7 +111,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--clientId", {
       help: "SOOS Client ID - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(CONSTANTS.SOOS.ENVIRONMENT_VARIABLES.CLIENT_ID),
+      default: getEnvVariable(CONSTANTS.SOOS.EnvironmentVariables.ClientId),
       required: false,
     });
 
@@ -125,7 +125,7 @@ class SOOSSCAAnalysis {
       type: (value: string) => {
         return getDirectoriesToExclude(value.split(","));
       },
-      default: CONSTANTS.SOOS.DEFAULT_DIRECTORIES_TO_EXCLUDE,
+      default: CONSTANTS.SOOS.DefaultDirectoriesToExclude,
       required: false,
     });
 
@@ -148,7 +148,7 @@ class SOOSSCAAnalysis {
     parser.add_argument("--integrationType", {
       help: "Integration Type - Intended for internal use only.",
       required: false,
-      default: CONSTANTS.SOOS.DEFAULT_INTEGRATION_TYPE,
+      default: CONSTANTS.SOOS.DefaultIntegrationType,
     });
 
     parser.add_argument("--logLevel", {
@@ -235,13 +235,12 @@ class SOOSSCAAnalysis {
     let branchHash: string | undefined;
     let analysisId: string | undefined;
 
-    const soosAnalysisApiClient = new SOOSAnalysisApiClient(this.args.apiKey, this.args.apiURL);
     const soosProjectsApiClient = new SOOSProjectsApiClient(
       this.args.apiKey,
       this.args.apiURL.replace("api.", "api-projects.")
     );
 
-    const analysisService = new AnalysisService(soosAnalysisApiClient);
+    const analysisService = AnalysisService.create(this.args.apiKey, this.args.apiURL);
 
     try {
       const result = await analysisService.setupScan({
@@ -267,9 +266,10 @@ class SOOSSCAAnalysis {
 
       soosLogger.logLineSeparator();
 
-      const supportedManifestsResponse = await soosAnalysisApiClient.getSupportedManifests({
-        clientId: this.args.clientId,
-      });
+      const supportedManifestsResponse =
+        await analysisService.analysisApiClient.getSupportedManifests({
+          clientId: this.args.clientId,
+        });
 
       const filteredPackageManagers =
         this.args.packageManagers.length === 0
@@ -347,7 +347,7 @@ class SOOSSCAAnalysis {
       for (const [packageManager, files] of Object.entries(manifestsByPackageManager)) {
         try {
           const manifestUploadResponse = await this.uploadManifestFilesByPackageManager({
-            apiClient: soosAnalysisApiClient,
+            apiClient: analysisService.analysisApiClient,
             clientId: this.args.clientId,
             projectHash,
             branchHash,
@@ -399,7 +399,7 @@ class SOOSSCAAnalysis {
       });
 
       if (this.args.outputFormat !== undefined) {
-        await analysisService.runOutputFormat({
+        await analysisService.generateFormattedOutput({
           clientId: this.args.clientId,
           projectHash: result.projectHash,
           projectName: this.args.projectName,
@@ -514,7 +514,7 @@ class SOOSSCAAnalysis {
     const manifestFiles = packageManagerManifests.reduce<Array<IManifestFile>>(
       (accumulator, packageManagerManifests) => {
         const matches = packageManagerManifests.manifests
-          .filter((manifest) => useLockFile === manifest.isLockFile) // filter manifests by lock file
+          .filter((manifest) => useLockFile === manifest.isLockFile)
           .map((manifest) => {
             const manifestGlobPattern = manifest.pattern.startsWith(".")
               ? `*${manifest.pattern}` // ends with
