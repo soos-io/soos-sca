@@ -75,7 +75,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--apiKey", {
       help: "SOOS API Key - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(SOOS_SCA_CONSTANTS.SOOS.EnvironmentVariables.ApiKey),
+      default: getEnvVariable(SOOS_SCA_CONSTANTS.EnvironmentVariables.ApiKey),
       required: false,
     });
 
@@ -115,7 +115,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--clientId", {
       help: "SOOS Client ID - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(SOOS_SCA_CONSTANTS.SOOS.EnvironmentVariables.ClientId),
+      default: getEnvVariable(SOOS_SCA_CONSTANTS.EnvironmentVariables.ClientId),
       required: false,
     });
 
@@ -144,7 +144,7 @@ class SOOSSCAAnalysis {
       type: (value: string) => {
         return getDirectoriesToExclude(value.split(","));
       },
-      default: SOOS_SCA_CONSTANTS.SOOS.DefaultDirectoriesToExclude,
+      default: SOOS_SCA_CONSTANTS.DefaultDirectoriesToExclude,
       required: false,
     });
 
@@ -168,7 +168,7 @@ class SOOSSCAAnalysis {
     parser.add_argument("--integrationType", {
       help: "Integration Type - Intended for internal use only.",
       required: false,
-      default: SOOS_SCA_CONSTANTS.SOOS.DefaultIntegrationType,
+      default: SOOS_SCA_CONSTANTS.DefaultIntegrationType,
     });
 
     parser.add_argument("--logLevel", {
