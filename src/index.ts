@@ -23,7 +23,7 @@ import {
 } from "@soos-io/api-client/dist/utilities";
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { ArgumentParser } from "argparse";
-import { CONSTANTS } from "./constants";
+import { SOOS_SCA_CONSTANTS } from "./constants";
 import { exit } from "process";
 import SOOSAnalysisApiClient, {
   ICreateScanRequestContributingDeveloperAudit,
@@ -75,7 +75,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--apiKey", {
       help: "SOOS API Key - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(CONSTANTS.SOOS.EnvironmentVariables.ApiKey),
+      default: getEnvVariable(SOOS_SCA_CONSTANTS.SOOS.EnvironmentVariables.ApiKey),
       required: false,
     });
 
@@ -115,7 +115,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--clientId", {
       help: "SOOS Client ID - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(CONSTANTS.SOOS.EnvironmentVariables.ClientId),
+      default: getEnvVariable(SOOS_SCA_CONSTANTS.SOOS.EnvironmentVariables.ClientId),
       required: false,
     });
 
@@ -144,7 +144,7 @@ class SOOSSCAAnalysis {
       type: (value: string) => {
         return getDirectoriesToExclude(value.split(","));
       },
-      default: CONSTANTS.SOOS.DefaultDirectoriesToExclude,
+      default: SOOS_SCA_CONSTANTS.SOOS.DefaultDirectoriesToExclude,
       required: false,
     });
 
@@ -167,7 +167,7 @@ class SOOSSCAAnalysis {
     parser.add_argument("--integrationType", {
       help: "Integration Type - Intended for internal use only.",
       required: false,
-      default: CONSTANTS.SOOS.DefaultIntegrationType,
+      default: SOOS_SCA_CONSTANTS.SOOS.DefaultIntegrationType,
     });
 
     parser.add_argument("--logLevel", {

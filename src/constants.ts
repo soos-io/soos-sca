@@ -1,4 +1,4 @@
-export const CONSTANTS = {
+export const SOOS_SCA_CONSTANTS = {
   SOOS: {
     EnvironmentVariables: {
       ApiKey: "SOOS_API_KEY",
