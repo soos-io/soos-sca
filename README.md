@@ -54,6 +54,9 @@ See [Windows Batch File Gist](https://gist.githubusercontent.com/soostech/37134f
 | `--buildVersion` | None | Version of application build artifacts. |
 | `--clientId` | None | SOOS Client ID - get yours from https://app.soos.io/integrate/containers |
 | `--commitHash` | None | The commit hash value from the SCM System. |
+| `--contributingDeveloperId` | None | Contributing Developer ID - Intended for internal use only |
+| `--contributingDeveloperSource` | None | Contributing Developer Source - Intended for internal use only. |
+| `--contributingDeveloperSourceName` | None | Contributing Developer Source Name - Intended for internal use only. |
 | `--directoriesToExclude` | `**/node_modules/**, "**/bin/**", "**/obj/**", "**/lib/**` | Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/** |
 | `--filesToExclude` | None | Listing of files or patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt |
 | `--integrationName` | None | Integration Name - Intended for internal use only. |

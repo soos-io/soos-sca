@@ -23,13 +23,14 @@ import {
 } from "@soos-io/api-client/dist/utilities";
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { ArgumentParser } from "argparse";
-import { CONSTANTS } from "./utils/constants";
+import { CONSTANTS } from "./constants";
 import { exit } from "process";
 import SOOSAnalysisApiClient, {
+  ICreateScanRequestContributingDeveloperAudit,
   IUploadManifestFilesResponse,
 } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
 import SOOSProjectsApiClient from "@soos-io/api-client/dist/api/SOOSProjectsApiClient";
-import { getDirectoriesToExclude } from "./utils/utilities";
+import { getDirectoriesToExclude } from "./utilities";
 import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
 
 interface IManifestFile {
@@ -48,6 +49,9 @@ interface SOOSSCAAnalysisArgs {
   buildVersion: string;
   clientId: string;
   commitHash: string;
+  contributingDeveloperId: string;
+  contributingDeveloperSource: string;
+  contributingDeveloperSourceName: string;
   directoriesToExclude: Array<string>;
   filesToExclude: Array<string>;
   integrationName: IntegrationName;
@@ -117,6 +121,21 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--commitHash", {
       help: "The commit hash value from the SCM System.",
+      required: false,
+    });
+
+    parser.add_argument("--contributingDeveloperId", {
+      help: "Contributing Developer ID - Intended for internal use only.",
+      required: false,
+    });
+
+    parser.add_argument("--contributingDeveloperSource", {
+      help: "Contributing Developer Source - Intended for internal use only.",
+      required: false,
+    });
+
+    parser.add_argument("--contributingDeveloperSourceName", {
+      help: "Contributing Developer Source Name - Intended for internal use only.",
       required: false,
     });
 
@@ -256,7 +275,7 @@ class SOOSSCAAnalysis {
         integrationType: this.args.integrationType,
         appVersion: this.args.appVersion,
         scriptVersion: this.args.scriptVersion,
-        contributingDeveloperAudit: [],
+        contributingDeveloperAudit: this.getContributingDeveloper(this.args),
         scanType: ScanType.SCA,
       });
 
@@ -486,6 +505,26 @@ class SOOSSCAAnalysis {
     });
 
     return response;
+  }
+
+  private getContributingDeveloper(
+    args: SOOSSCAAnalysisArgs
+  ): ICreateScanRequestContributingDeveloperAudit[] | [] {
+    if (
+      !args.contributingDeveloperId ||
+      !args.contributingDeveloperSource ||
+      !args.contributingDeveloperSourceName
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        contributingDeveloperId: args.contributingDeveloperId,
+        source: args.contributingDeveloperSource,
+        sourceName: args.contributingDeveloperSourceName,
+      },
+    ];
   }
 
   private searchForManifestFiles({
