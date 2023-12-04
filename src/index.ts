@@ -162,6 +162,7 @@ class SOOSSCAAnalysis {
       type: (value: string) => {
         return ensureEnumValue(IntegrationName, value);
       },
+      default: IntegrationName.Script,
     });
 
     parser.add_argument("--integrationType", {
