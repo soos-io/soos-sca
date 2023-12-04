@@ -75,7 +75,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--apiKey", {
       help: "SOOS API Key - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(SOOS_SCA_CONSTANTS.EnvironmentVariables.ApiKey),
+      default: getEnvVariable(SOOS_CONSTANTS.EnvironmentVariables.ApiKey),
       required: false,
     });
 
@@ -115,7 +115,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--clientId", {
       help: "SOOS Client ID - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(SOOS_SCA_CONSTANTS.EnvironmentVariables.ClientId),
+      default: getEnvVariable(SOOS_CONSTANTS.EnvironmentVariables.ClientId),
       required: false,
     });
 
