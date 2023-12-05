@@ -324,7 +324,7 @@ class SOOSSCAAnalysis {
           status: ScanStatus.Incomplete,
           message: errorMessage,
         });
-        return;
+        exit(1);
       }
 
       const filesToUpload = manifestFiles.slice(0, SOOS_CONSTANTS.FileUploads.MaxManifests);
@@ -401,7 +401,7 @@ class SOOSSCAAnalysis {
           status: ScanStatus.Incomplete,
           message: `Error uploading manifests.`,
         });
-        return;
+        exit(1);
       }
 
       soosLogger.logLineSeparator();

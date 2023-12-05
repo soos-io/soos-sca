@@ -1,6 +1,6 @@
 {
   "name": "@soos-io/soos-sca",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SOOS Security Analysis CI",
   "main": "bin/index.js",
   "scripts": {
