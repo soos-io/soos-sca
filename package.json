@@ -1,6 +1,6 @@
 {
   "name": "@soos-io/soos-sca",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "SOOS Security Analysis CI",
   "main": "bin/index.js",
   "scripts": {
@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/soos-io/soos-sca#readme",
   "dependencies": {
-    "@soos-io/api-client": "0.2.0",
+    "@soos-io/api-client": "0.2.1",
     "argparse": "^2.0.1",
     "tslib": "^2.6.2",
     "glob": "^10.3.10"

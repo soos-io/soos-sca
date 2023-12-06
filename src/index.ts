@@ -207,6 +207,7 @@ class SOOSSCAAnalysis {
       required: false,
       default: [],
       type: (value: string) => {
+        if (value.length === 0) return [];
         const values = value.split(",");
         values.map((value) => {
           return ensureEnumValue(PackageManagerType, value);
