@@ -226,6 +226,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--scriptVersion", {
       required: false,
+      default: SOOS_SCA_CONSTANTS.SoosPackageVersion,
     });
 
     parser.add_argument("--sourceCodePath", {
