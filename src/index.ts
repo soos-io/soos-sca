@@ -563,7 +563,11 @@ class SOOSSCAAnalysis {
 
             const pattern = `**/${manifestGlobPattern}`;
             const files = Glob.sync(pattern, {
-              ignore: [...(this.args.filesToExclude || []), ...this.args.directoriesToExclude],
+              ignore: [
+                ...(this.args.filesToExclude || []),
+                ...this.args.directoriesToExclude,
+                SOOS_SCA_CONSTANTS.SoosPackageDirToExclude,
+              ],
               nocase: true,
             });
 
