@@ -2,6 +2,7 @@
 import * as FileSystem from "fs";
 import * as Glob from "glob";
 import * as Path from "path";
+import { version } from "../package.json";
 import FormData from "form-data";
 import {
   IntegrationName,
@@ -226,7 +227,7 @@ class SOOSSCAAnalysis {
 
     parser.add_argument("--scriptVersion", {
       required: false,
-      default: SOOS_SCA_CONSTANTS.SoosPackageVersion,
+      default: version,
     });
 
     parser.add_argument("--sourceCodePath", {
