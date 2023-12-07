@@ -257,6 +257,7 @@ class SOOSSCAAnalysis {
     let projectHash: string | undefined;
     let branchHash: string | undefined;
     let analysisId: string | undefined;
+    let scanStatusUrl: string | undefined;
 
     const soosProjectsApiClient = new SOOSProjectsApiClient(
       this.args.apiKey,
@@ -286,6 +287,7 @@ class SOOSSCAAnalysis {
       projectHash = result.projectHash;
       branchHash = result.branchHash;
       analysisId = result.analysisId;
+      scanStatusUrl = result.scanStatusUrl;
 
       soosLogger.logLineSeparator();
 
@@ -326,6 +328,7 @@ class SOOSSCAAnalysis {
           analysisId: analysisId,
           status: ScanStatus.Incomplete,
           message: errorMessage,
+          scanStatusUrl: result.scanStatusUrl,
         });
         exit(1);
       }
@@ -403,6 +406,7 @@ class SOOSSCAAnalysis {
           analysisId: analysisId,
           status: ScanStatus.Incomplete,
           message: `Error uploading manifests.`,
+          scanStatusUrl: result.scanStatusUrl,
         });
         exit(1);
       }
@@ -463,6 +467,7 @@ class SOOSSCAAnalysis {
           analysisId: analysisId,
           status: ScanStatus.Error,
           message: "Error while performing scan.",
+          scanStatusUrl: scanStatusUrl ?? undefined,
         });
       soosLogger.error(error);
       exit(1);
