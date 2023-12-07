@@ -163,7 +163,7 @@ class SOOSSCAAnalysis {
       type: (value: string) => {
         return ensureEnumValue(IntegrationName, value);
       },
-      default: IntegrationName.Script,
+      default: IntegrationName.SoosSca,
     });
 
     parser.add_argument("--integrationType", {
@@ -419,6 +419,7 @@ class SOOSSCAAnalysis {
       const scanStatus = await analysisService.waitForScanToFinish({
         scanStatusUrl: result.scanStatusUrl,
         scanUrl: result.scanUrl,
+        scanType: ScanType.SCA,
       });
 
       if (this.args.outputFormat !== undefined) {
