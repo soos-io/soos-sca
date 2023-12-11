@@ -21,6 +21,7 @@ import {
   getEnvVariable,
   obfuscateProperties,
   formatBytes,
+  verifyScanStatus,
 } from "@soos-io/api-client/dist/utilities";
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { ArgumentParser } from "argparse";
@@ -440,22 +441,10 @@ class SOOSSCAAnalysis {
         });
       }
 
-      if (this.args.onFailure === OnFailure.Fail) {
-        if (scanStatus === ScanStatus.FailedWithIssues) {
-          soosLogger.info("Analysis complete - Failures reported");
-          soosLogger.info("Failing the build.");
-          process.exit(1);
-        } else if (scanStatus === ScanStatus.Incomplete) {
-          soosLogger.info(
-            "Analysis Incomplete. It may have been cancelled or superseded by another scan."
-          );
-          soosLogger.info("Failing the build.");
-          process.exit(1);
-        } else if (scanStatus === ScanStatus.Error) {
-          soosLogger.info("Analysis Error.");
-          soosLogger.info("Failing the build.");
-          process.exit(1);
-        }
+      const exitWithError = verifyScanStatus(scanStatus);
+
+      if (this.args.onFailure === OnFailure.Fail && exitWithError) {
+        exit(1);
       }
     } catch (error) {
       if (projectHash && branchHash && analysisId)
