@@ -479,7 +479,7 @@ class SOOSSCAAnalysis {
     manifestFiles: Array<IManifestFile>;
   }): Promise<IUploadManifestFilesResponse> {
     const formData = manifestFiles.reduce((formDataAcc: FormData, manifest, index) => {
-      const workingDirectory = process.env.SYSTEM_DEFAULTWORKINGDIRECTORY ?? "";
+      const workingDirectory = this.args.sourceCodePath;
       const manifestParts = manifest.path.replace(workingDirectory, "").split(Path.sep);
       const parentFolder =
         manifestParts.length >= 2
