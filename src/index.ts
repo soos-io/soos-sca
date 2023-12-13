@@ -3,7 +3,6 @@ import * as FileSystem from "fs";
 import * as Glob from "glob";
 import * as Path from "path";
 import { version } from "../package.json";
-import FormData from "form-data";
 import {
   IntegrationName,
   IntegrationType,
@@ -26,9 +25,7 @@ import {
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { SOOS_SCA_CONSTANTS } from "./constants";
 import { exit } from "process";
-import SOOSAnalysisApiClient, {
-  IUploadManifestFilesResponse,
-} from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
+import { IUploadManifestFilesResponse } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
 import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
 import AnalysisArgumentParser from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
 
@@ -247,13 +244,13 @@ class SOOSSCAAnalysis {
 
       for (const [packageManager, files] of Object.entries(manifestsByPackageManager)) {
         try {
-          const manifestUploadResponse = await this.uploadManifestFilesByPackageManager({
-            apiClient: analysisService.analysisApiClient,
+          const manifestUploadResponse = await this.uploadManifestFiles({
+            analysisService,
             clientId: this.args.clientId,
             projectHash,
             branchHash,
             analysisId,
-            manifestFiles: files,
+            manifestFiles: files.map((f) => f.path),
           });
 
           soosLogger.info(
@@ -337,39 +334,27 @@ class SOOSSCAAnalysis {
     }
   }
 
-  private async uploadManifestFilesByPackageManager({
-    apiClient,
+  private async uploadManifestFiles({
+    analysisService,
     clientId,
     projectHash,
     branchHash,
     analysisId,
     manifestFiles,
   }: {
-    apiClient: SOOSAnalysisApiClient;
+    analysisService: AnalysisService;
     clientId: string;
     projectHash: string;
     branchHash: string;
     analysisId: string;
-    manifestFiles: Array<IManifestFile>;
+    manifestFiles: Array<string>;
   }): Promise<IUploadManifestFilesResponse> {
-    const formData = manifestFiles.reduce((formDataAcc: FormData, manifest, index) => {
-      const workingDirectory = this.args.sourceCodePath;
-      const manifestParts = manifest.path.replace(workingDirectory, "").split(Path.sep);
-      const parentFolder =
-        manifestParts.length >= 2
-          ? manifestParts.slice(0, manifestParts.length - 1).join(Path.sep)
-          : "";
-      const suffix = index > 0 ? index : "";
-      const fileReadStream = FileSystem.createReadStream(manifest.path, {
-        encoding: SOOS_CONSTANTS.FileUploads.Encoding,
-      });
-      formDataAcc.append(`file${suffix}`, fileReadStream);
-      formDataAcc.append(`parentFolder${suffix}`, parentFolder);
+    const formData = await analysisService.getAnalysisFilesAsFormData(
+      manifestFiles,
+      this.args.sourceCodePath,
+    );
 
-      return formDataAcc;
-    }, new FormData());
-
-    const response = await apiClient.uploadManifestFiles({
+    const response = await analysisService.analysisApiClient.uploadManifestFiles({
       clientId,
       projectHash,
       branchHash,
