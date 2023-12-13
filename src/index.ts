@@ -28,6 +28,7 @@ import { exit } from "process";
 import { IUploadManifestFilesResponse } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
 import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
 import AnalysisArgumentParser from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
+import { removeDuplicates } from "./utilities";
 
 interface IManifestFile {
   packageManager: string;
@@ -79,14 +80,14 @@ class SOOSSCAAnalysis {
     analysisArgumentParser.argumentParser.add_argument("--directoriesToExclude", {
       help: "Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/**",
       type: (value: string) => {
-        return value.split(",").map((pattern) => pattern.trim());
+        return removeDuplicates(value.split(",").map((pattern) => pattern.trim()));
       },
       default: SOOS_SCA_CONSTANTS.DefaultDirectoriesToExclude,
       required: false,
     });
 
     analysisArgumentParser.argumentParser.add_argument("--filesToExclude", {
-      help: "Listing of files or patterns patterns to exclude from the search for manifest files. eg: **/sa**.sarif.json/, **/sast.sarif.json",
+      help: "Listing of files or patterns patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt",
       type: (value: string) => {
         return value.split(",").map((pattern) => pattern.trim());
       },
