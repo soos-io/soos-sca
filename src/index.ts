@@ -245,6 +245,7 @@ class SOOSSCAAnalysis {
             branchHash,
             analysisId,
             manifestFiles: files.map((f) => f.path),
+            hasMoreThanMaximumManifests,
           });
 
           soosLogger.info(
@@ -334,6 +335,7 @@ class SOOSSCAAnalysis {
     branchHash,
     analysisId,
     manifestFiles,
+    hasMoreThanMaximumManifests,
   }: {
     analysisService: AnalysisService;
     clientId: string;
@@ -341,6 +343,7 @@ class SOOSSCAAnalysis {
     branchHash: string;
     analysisId: string;
     manifestFiles: Array<string>;
+    hasMoreThanMaximumManifests: boolean;
   }): Promise<IUploadManifestFilesResponse> {
     const formData = await analysisService.getAnalysisFilesAsFormData(
       manifestFiles,
@@ -353,6 +356,7 @@ class SOOSSCAAnalysis {
       branchHash,
       analysisId,
       manifestFiles: formData,
+      hasMoreThanMaximumManifests,
     });
 
     return response;
