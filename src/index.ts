@@ -3,9 +3,9 @@ import * as FileSystem from "fs";
 import * as Glob from "glob";
 import * as Path from "path";
 import { version } from "../package.json";
-import FormData from "form-data";
 import {
   IntegrationName,
+  IntegrationType,
   LogLevel,
   OnFailure,
   OutputFormat,
@@ -18,22 +18,17 @@ import {
 import {
   ensureEnumValue,
   ensureNonEmptyValue,
-  getEnvVariable,
   obfuscateProperties,
   formatBytes,
   verifyScanStatus,
 } from "@soos-io/api-client/dist/utilities";
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
-import { ArgumentParser } from "argparse";
 import { SOOS_SCA_CONSTANTS } from "./constants";
 import { exit } from "process";
-import SOOSAnalysisApiClient, {
-  ICreateScanRequestContributingDeveloperAudit,
-  IUploadManifestFilesResponse,
-} from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
-import SOOSProjectsApiClient from "@soos-io/api-client/dist/api/SOOSProjectsApiClient";
-import { getDirectoriesToExclude } from "./utilities";
+import { IUploadManifestFilesResponse } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
 import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
+import AnalysisArgumentParser from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
+import { removeDuplicates } from "./utilities";
 
 interface IManifestFile {
   packageManager: string;
@@ -57,7 +52,7 @@ interface SOOSSCAAnalysisArgs {
   directoriesToExclude: Array<string>;
   filesToExclude: Array<string>;
   integrationName: IntegrationName;
-  integrationType: string;
+  integrationType: IntegrationType;
   logLevel: LogLevel;
   onFailure: OnFailure;
   operatingEnvironment: string;
@@ -72,85 +67,26 @@ interface SOOSSCAAnalysisArgs {
 
 class SOOSSCAAnalysis {
   constructor(private args: SOOSSCAAnalysisArgs) {}
+
   static parseArgs(): SOOSSCAAnalysisArgs {
-    const parser = new ArgumentParser({ description: "SOOS Sca" });
+    const analysisArgumentParser = AnalysisArgumentParser.create(ScanType.SCA);
 
-    parser.add_argument("--apiKey", {
-      help: "SOOS API Key - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(SOOS_CONSTANTS.EnvironmentVariables.ApiKey),
-      required: false,
-    });
+    analysisArgumentParser.addBaseScanArguments(
+      IntegrationName.SoosSca,
+      IntegrationType.Script,
+      version,
+    );
 
-    parser.add_argument("--apiURL", {
-      help: "SOOS API URL - Intended for internal use only, do not modify.",
-      default: "https://api.soos.io/api/",
-      required: false,
-      type: (value: string) => {
-        return ensureNonEmptyValue(value, "apiURL");
-      },
-    });
-
-    parser.add_argument("--appVersion", {
-      help: "App Version - Intended for internal use only.",
-      required: false,
-    });
-
-    parser.add_argument("--branchName", {
-      help: "The name of the branch from the SCM System.",
-      required: false,
-    });
-
-    parser.add_argument("--branchURI", {
-      help: "The URI to the branch from the SCM System.",
-      required: false,
-    });
-
-    parser.add_argument("--buildURI", {
-      help: "URI to CI build info.",
-      required: false,
-    });
-
-    parser.add_argument("--buildVersion", {
-      help: "Version of application build artifacts.",
-      required: false,
-    });
-
-    parser.add_argument("--clientId", {
-      help: "SOOS Client ID - get yours from https://app.soos.io/integrate/containers",
-      default: getEnvVariable(SOOS_CONSTANTS.EnvironmentVariables.ClientId),
-      required: false,
-    });
-
-    parser.add_argument("--commitHash", {
-      help: "The commit hash value from the SCM System.",
-      required: false,
-    });
-
-    parser.add_argument("--contributingDeveloperId", {
-      help: "Contributing Developer ID - Intended for internal use only.",
-      required: false,
-    });
-
-    parser.add_argument("--contributingDeveloperSource", {
-      help: "Contributing Developer Source - Intended for internal use only.",
-      required: false,
-    });
-
-    parser.add_argument("--contributingDeveloperSourceName", {
-      help: "Contributing Developer Source Name - Intended for internal use only.",
-      required: false,
-    });
-
-    parser.add_argument("--directoriesToExclude", {
+    analysisArgumentParser.argumentParser.add_argument("--directoriesToExclude", {
       help: "Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/**",
       type: (value: string) => {
-        return getDirectoriesToExclude(value.split(","));
+        return removeDuplicates(value.split(",").map((pattern) => pattern.trim()));
       },
       default: SOOS_SCA_CONSTANTS.DefaultDirectoriesToExclude,
       required: false,
     });
 
-    parser.add_argument("--filesToExclude", {
+    analysisArgumentParser.argumentParser.add_argument("--filesToExclude", {
       help: "Listing of files or patterns patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt",
       type: (value: string) => {
         return value.split(",").map((pattern) => pattern.trim());
@@ -158,31 +94,7 @@ class SOOSSCAAnalysis {
       required: false,
     });
 
-    parser.add_argument("--integrationName", {
-      help: "Integration Name - Intended for internal use only.",
-      required: false,
-      type: (value: string) => {
-        return ensureEnumValue(IntegrationName, value);
-      },
-      default: IntegrationName.SoosSca,
-    });
-
-    parser.add_argument("--integrationType", {
-      help: "Integration Type - Intended for internal use only.",
-      required: false,
-      default: SOOS_SCA_CONSTANTS.DefaultIntegrationType,
-    });
-
-    parser.add_argument("--logLevel", {
-      help: "Minimum level to show logs: PASS, IGNORE, INFO, WARN or FAIL.",
-      default: LogLevel.INFO,
-      required: false,
-      type: (value: string) => {
-        return ensureEnumValue(LogLevel, value);
-      },
-    });
-
-    parser.add_argument("--onFailure", {
+    analysisArgumentParser.argumentParser.add_argument("--onFailure", {
       help: "Action to perform when the scan fails. Options: fail_the_build, continue_on_failure.",
       default: OnFailure.Continue,
       required: false,
@@ -191,12 +103,7 @@ class SOOSSCAAnalysis {
       },
     });
 
-    parser.add_argument("--operatingEnvironment", {
-      help: "Set Operating environment for information purposes only.",
-      required: false,
-    });
-
-    parser.add_argument("--outputFormat", {
+    analysisArgumentParser.argumentParser.add_argument("--outputFormat", {
       help: "Output format for vulnerabilities: only the value SARIF is available at the moment",
       required: false,
       type: (value: string) => {
@@ -204,7 +111,7 @@ class SOOSSCAAnalysis {
       },
     });
 
-    parser.add_argument("--packageManagers", {
+    analysisArgumentParser.argumentParser.add_argument("--packageManagers", {
       help: "A list of package managers, delimited by comma, to include when searching for manifest files.",
       required: false,
       default: [],
@@ -218,54 +125,30 @@ class SOOSSCAAnalysis {
       },
     });
 
-    parser.add_argument("--projectName", {
-      help: "Project Name - this is what will be displayed in the SOOS app.",
-      required: true,
-      type: (value: string) => {
-        return ensureNonEmptyValue(value, "projectName");
-      },
-    });
-
-    parser.add_argument("--scriptVersion", {
-      required: false,
-      default: version,
-    });
-
-    parser.add_argument("--sourceCodePath", {
+    analysisArgumentParser.argumentParser.add_argument("--sourceCodePath", {
       help: "Root path to begin recursive search for manifests.",
       default: process.cwd(),
       required: false,
     });
 
-    parser.add_argument("--verbose", {
-      help: "Enable verbose logging.",
-      action: "store_true",
-      default: false,
-      required: false,
-    });
-
-    parser.add_argument("--workingDirectory", {
+    analysisArgumentParser.argumentParser.add_argument("--workingDirectory", {
       help: "Absolute path where SOOS may write and read persistent files for the given build. eg Correct: /tmp/workspace/ | Incorrect: ./bin/start/",
       default: process.cwd(),
       required: false,
     });
 
     soosLogger.info("Parsing arguments");
-    return parser.parse_args();
+    return analysisArgumentParser.parseArguments();
   }
 
   async runAnalysis(): Promise<void> {
+    const scanType = ScanType.SCA;
+    const analysisService = AnalysisService.create(this.args.apiKey, this.args.apiURL);
+
     let projectHash: string | undefined;
     let branchHash: string | undefined;
     let analysisId: string | undefined;
     let scanStatusUrl: string | undefined;
-
-    const soosProjectsApiClient = new SOOSProjectsApiClient(
-      this.args.apiKey,
-      this.args.apiURL.replace("api.", "api-projects.")
-    );
-
-    const analysisService = AnalysisService.create(this.args.apiKey, this.args.apiURL);
 
     try {
       const result = await analysisService.setupScan({
@@ -281,8 +164,19 @@ class SOOSSCAAnalysis {
         integrationType: this.args.integrationType,
         appVersion: this.args.appVersion,
         scriptVersion: this.args.scriptVersion,
-        contributingDeveloperAudit: this.getContributingDeveloper(this.args),
-        scanType: ScanType.SCA,
+        contributingDeveloperAudit:
+          !this.args.contributingDeveloperId ||
+          !this.args.contributingDeveloperSource ||
+          !this.args.contributingDeveloperSourceName
+            ? []
+            : [
+                {
+                  contributingDeveloperId: this.args.contributingDeveloperId,
+                  source: this.args.contributingDeveloperSource,
+                  sourceName: this.args.contributingDeveloperSourceName,
+                },
+              ],
+        scanType,
       });
 
       projectHash = result.projectHash;
@@ -304,11 +198,11 @@ class SOOSSCAAnalysis {
               this.args.packageManagers.some((pm) =>
                 StringUtilities.areEqual(pm, packageManagerManifests.packageManager, {
                   sensitivity: "base",
-                })
-              )
+                }),
+              ),
             );
 
-      const settings = await soosProjectsApiClient.getProjectSettings({
+      const settings = await analysisService.projectsApiClient.getProjectSettings({
         clientId: this.args.clientId,
         projectHash,
       });
@@ -325,7 +219,7 @@ class SOOSSCAAnalysis {
           clientId: this.args.clientId,
           projectHash,
           branchHash,
-          scanType: ScanType.SCA,
+          scanType,
           analysisId: analysisId,
           status: ScanStatus.Incomplete,
           message: errorMessage,
@@ -342,17 +236,13 @@ class SOOSSCAAnalysis {
         const filesDetectedString = StringUtilities.pluralizeTemplate(
           manifestFiles.length,
           "file was",
-          "files were"
+          "files were",
         );
-        const filesSkippedString = StringUtilities.pluralizeTemplate(
-          filesToSkip.length,
-          "file",
-          "files"
-        );
+        const filesSkippedString = StringUtilities.pluralizeTemplate(filesToSkip.length, "file");
         soosLogger.info(
           `The maximum number of manifest per scan is ${SOOS_CONSTANTS.FileUploads.MaxManifests}. ${filesDetectedString} detected, and ${filesSkippedString} will be not be uploaded. \n`,
           `The following manifests will not be included in the scan: \n`,
-          filesToSkip.map((file) => `  "${file.name}": "${file.path}"`).join("\n")
+          filesToSkip.map((file) => `  "${file.name}": "${file.path}"`).join("\n"),
         );
       }
 
@@ -365,21 +255,20 @@ class SOOSSCAAnalysis {
             [file.packageManager]: packageManagerFiles.concat(file),
           };
         },
-        {}
+        {},
       );
 
-      // note: assuming failure until proven otherwise
       let allUploadsFailed = true;
-
       for (const [packageManager, files] of Object.entries(manifestsByPackageManager)) {
         try {
-          const manifestUploadResponse = await this.uploadManifestFilesByPackageManager({
-            apiClient: analysisService.analysisApiClient,
+          const manifestUploadResponse = await this.uploadManifestFiles({
+            analysisService,
             clientId: this.args.clientId,
             projectHash,
             branchHash,
             analysisId,
-            manifestFiles: files,
+            manifestFiles: files.map((f) => f.path),
+            hasMoreThanMaximumManifests,
           });
 
           soosLogger.info(
@@ -387,14 +276,13 @@ class SOOSSCAAnalysis {
             `  ${manifestUploadResponse.message} \n`,
             manifestUploadResponse.manifests
               ?.map((m) => `  ${m.name}: ${m.statusMessage}`)
-              .join("\n")
+              .join("\n"),
           );
 
           allUploadsFailed = false;
         } catch (e: unknown) {
-          // NOTE: we continue on to the other package managers, but log it as a warning in the log
-          const message = e instanceof Error ? e.message : (e as string);
-          soosLogger.warn(message);
+          // NOTE: we continue on to the other package managers
+          soosLogger.warn(e instanceof Error ? e.message : (e as string));
         }
       }
 
@@ -403,7 +291,7 @@ class SOOSSCAAnalysis {
           clientId: this.args.clientId,
           projectHash,
           branchHash,
-          scanType: ScanType.SCA,
+          scanType,
           analysisId: analysisId,
           status: ScanStatus.Incomplete,
           message: `Error uploading manifests.`,
@@ -417,14 +305,14 @@ class SOOSSCAAnalysis {
         clientId: this.args.clientId,
         projectHash,
         analysisId: result.analysisId,
-        scanType: ScanType.SCA,
+        scanType,
         scanUrl: result.scanUrl,
       });
 
       const scanStatus = await analysisService.waitForScanToFinish({
         scanStatusUrl: result.scanStatusUrl,
         scanUrl: result.scanUrl,
-        scanType: ScanType.SCA,
+        scanType,
       });
 
       if (this.args.outputFormat !== undefined) {
@@ -433,7 +321,7 @@ class SOOSSCAAnalysis {
           projectHash: result.projectHash,
           projectName: this.args.projectName,
           branchHash: result.branchHash,
-          scanType: ScanType.SCA,
+          scanType,
           analysisId: result.analysisId,
           outputFormat: this.args.outputFormat,
           sourceCodePath: this.args.sourceCodePath,
@@ -452,78 +340,49 @@ class SOOSSCAAnalysis {
           clientId: this.args.clientId,
           projectHash,
           branchHash,
-          scanType: ScanType.SCA,
+          scanType,
           analysisId: analysisId,
           status: ScanStatus.Error,
           message: "Error while performing scan.",
-          scanStatusUrl: scanStatusUrl ?? undefined,
+          scanStatusUrl,
         });
       soosLogger.error(error);
       exit(1);
     }
   }
 
-  private async uploadManifestFilesByPackageManager({
-    apiClient,
+  private async uploadManifestFiles({
+    analysisService,
     clientId,
     projectHash,
     branchHash,
     analysisId,
     manifestFiles,
+    hasMoreThanMaximumManifests,
   }: {
-    apiClient: SOOSAnalysisApiClient;
+    analysisService: AnalysisService;
     clientId: string;
     projectHash: string;
     branchHash: string;
     analysisId: string;
-    manifestFiles: Array<IManifestFile>;
+    manifestFiles: Array<string>;
+    hasMoreThanMaximumManifests: boolean;
   }): Promise<IUploadManifestFilesResponse> {
-    const formData = manifestFiles.reduce((formDataAcc: FormData, manifest, index) => {
-      const workingDirectory = this.args.sourceCodePath;
-      const manifestParts = manifest.path.replace(workingDirectory, "").split(Path.sep);
-      const parentFolder =
-        manifestParts.length >= 2
-          ? manifestParts.slice(0, manifestParts.length - 1).join(Path.sep)
-          : "";
-      const suffix = index > 0 ? index : "";
-      const fileReadStream = FileSystem.createReadStream(manifest.path, {
-        encoding: SOOS_CONSTANTS.FileUploads.Encoding,
-      });
-      formDataAcc.append(`file${suffix}`, fileReadStream);
-      formDataAcc.append(`parentFolder${suffix}`, parentFolder);
+    const formData = await analysisService.getAnalysisFilesAsFormData(
+      manifestFiles,
+      this.args.sourceCodePath,
+    );
 
-      return formDataAcc;
-    }, new FormData());
-
-    const response = await apiClient.uploadManifestFiles({
+    const response = await analysisService.analysisApiClient.uploadManifestFiles({
       clientId,
       projectHash,
       branchHash,
       analysisId,
       manifestFiles: formData,
+      hasMoreThanMaximumManifests,
     });
 
     return response;
-  }
-
-  private getContributingDeveloper(
-    args: SOOSSCAAnalysisArgs
-  ): ICreateScanRequestContributingDeveloperAudit[] | [] {
-    if (
-      !args.contributingDeveloperId ||
-      !args.contributingDeveloperSource ||
-      !args.contributingDeveloperSourceName
-    ) {
-      return [];
-    }
-
-    return [
-      {
-        contributingDeveloperId: args.contributingDeveloperId,
-        source: args.contributingDeveloperSource,
-        sourceName: args.contributingDeveloperSourceName,
-      },
-    ];
   }
 
   private searchForManifestFiles({
@@ -541,13 +400,13 @@ class SOOSSCAAnalysis {
   }): Array<IManifestFile> {
     const currentDirectory = process.cwd();
     soosLogger.info(
-      `Setting current working directory to project path '${this.args.sourceCodePath}'.`
+      `Setting current working directory to project path '${this.args.sourceCodePath}'.`,
     );
     process.chdir(this.args.sourceCodePath);
     soosLogger.info(
       `Lock file setting is ${
         useLockFile ? "on, ignoring non-lock files" : "off, ignoring lock files"
-      }.`
+      }.`,
     );
     const manifestFiles = packageManagerManifests.reduce<Array<IManifestFile>>(
       (accumulator, packageManagerManifests) => {
@@ -587,17 +446,17 @@ class SOOSSCAAnalysis {
             const fileStats = FileSystem.statSync(filePath);
             const fileSize = formatBytes(fileStats.size);
             soosLogger.info(
-              `Found manifest file '${filename}' (${fileSize}) at location '${filePath}'.`
+              `Found manifest file '${filename}' (${fileSize}) at location '${filePath}'.`,
             );
             return {
               packageManager: packageManagerManifests.packageManager,
               name: filename,
               path: filePath,
             };
-          })
+          }),
         );
       },
-      []
+      [],
     );
 
     process.chdir(currentDirectory);
@@ -619,8 +478,8 @@ class SOOSSCAAnalysis {
         JSON.stringify(
           obfuscateProperties(args as unknown as Record<string, unknown>, ["apiKey"]),
           null,
-          2
-        )
+          2,
+        ),
       );
       ensureNonEmptyValue(args.clientId, "clientId");
       ensureNonEmptyValue(args.apiKey, "apiKey");
