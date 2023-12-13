@@ -235,9 +235,7 @@ class SOOSSCAAnalysis {
         {},
       );
 
-      // note: assuming failure until proven otherwise
       let allUploadsFailed = true;
-
       for (const [packageManager, files] of Object.entries(manifestsByPackageManager)) {
         try {
           const manifestUploadResponse = await this.uploadManifestFiles({
@@ -259,9 +257,8 @@ class SOOSSCAAnalysis {
 
           allUploadsFailed = false;
         } catch (e: unknown) {
-          // NOTE: we continue on to the other package managers, but log it as a warning in the log
-          const message = e instanceof Error ? e.message : (e as string);
-          soosLogger.warn(message);
+          // NOTE: we continue on to the other package managers
+          soosLogger.warn(e instanceof Error ? e.message : (e as string));
         }
       }
 
