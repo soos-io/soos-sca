@@ -70,12 +70,28 @@ class SOOSSCAAnalysis {
   static parseArgs(): SOOSSCAAnalysisArgs {
     const analysisArgumentParser = AnalysisArgumentParser.create(ScanType.SCA);
 
-    // TODO SOOS_SCA_CONSTANTS.DefaultDirectoriesToExclude
     analysisArgumentParser.addBaseScanArguments(
       IntegrationName.SoosSast,
       IntegrationType.Script,
       version,
     );
+
+    analysisArgumentParser.argumentParser.add_argument("--directoriesToExclude", {
+      help: "Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/**",
+      type: (value: string) => {
+        return value.split(",").map((pattern) => pattern.trim());
+      },
+      default: SOOS_SCA_CONSTANTS.DefaultDirectoriesToExclude,
+      required: false,
+    });
+
+    analysisArgumentParser.argumentParser.add_argument("--filesToExclude", {
+      help: "Listing of files or patterns patterns to exclude from the search for manifest files. eg: **/sa**.sarif.json/, **/sast.sarif.json",
+      type: (value: string) => {
+        return value.split(",").map((pattern) => pattern.trim());
+      },
+      required: false,
+    });
 
     analysisArgumentParser.argumentParser.add_argument("--onFailure", {
       help: "Action to perform when the scan fails. Options: fail_the_build, continue_on_failure.",
