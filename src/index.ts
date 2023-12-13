@@ -215,11 +215,7 @@ class SOOSSCAAnalysis {
           "file was",
           "files were",
         );
-        const filesSkippedString = StringUtilities.pluralizeTemplate(
-          filesToSkip.length,
-          "file",
-          "files",
-        );
+        const filesSkippedString = StringUtilities.pluralizeTemplate(filesToSkip.length, "file");
         soosLogger.info(
           `The maximum number of manifest per scan is ${SOOS_CONSTANTS.FileUploads.MaxManifests}. ${filesDetectedString} detected, and ${filesSkippedString} will be not be uploaded. \n`,
           `The following manifests will not be included in the scan: \n`,
