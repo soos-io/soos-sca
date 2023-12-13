@@ -72,7 +72,7 @@ class SOOSSCAAnalysis {
     const analysisArgumentParser = AnalysisArgumentParser.create(ScanType.SCA);
 
     analysisArgumentParser.addBaseScanArguments(
-      IntegrationName.SoosSast,
+      IntegrationName.SoosSca,
       IntegrationType.Script,
       version,
     );
@@ -123,6 +123,12 @@ class SOOSSCAAnalysis {
         });
         return values;
       },
+    });
+
+    analysisArgumentParser.argumentParser.add_argument("--sourceCodePath", {
+      help: "Root path to begin recursive search for manifests.",
+      default: process.cwd(),
+      required: false,
     });
 
     analysisArgumentParser.argumentParser.add_argument("--workingDirectory", {
