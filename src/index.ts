@@ -330,8 +330,8 @@ class SOOSSCAAnalysis {
       }
 
       const exitWithError = verifyScanStatus(scanStatus);
-
-      if (this.args.onFailure === OnFailure.Fail && exitWithError) {
+      if (exitWithError && this.args.onFailure === OnFailure.Fail) {
+        soosLogger.warn("Failing the build.");
         exit(1);
       }
     } catch (error) {
