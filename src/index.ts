@@ -20,7 +20,7 @@ import {
   ensureNonEmptyValue,
   obfuscateProperties,
   formatBytes,
-  verifyScanStatus,
+  getExitCodeFromStatus,
 } from "@soos-io/api-client/dist/utilities";
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { SOOS_SCA_CONSTANTS } from "./constants";
@@ -329,11 +329,11 @@ class SOOSSCAAnalysis {
         });
       }
 
-      const exitWithError = verifyScanStatus(scanStatus);
-      if (exitWithError && this.args.onFailure === OnFailure.Fail) {
+      const exitCode = getExitCodeFromStatus(scanStatus);
+      if (exitCode > 0 && this.args.onFailure === OnFailure.Fail) {
         soosLogger.warn("Failing the build.");
-        exit(1);
       }
+      exit(exitCode);
     } catch (error) {
       if (projectHash && branchHash && analysisId)
         await analysisService.updateScanStatus({
