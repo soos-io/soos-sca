@@ -334,8 +334,7 @@ class SOOSSCAAnalysis {
         this.args.integrationName,
         this.args.onFailure,
       );
-      if (exitCode > 0 && this.args.onFailure === OnFailure.Fail)
-        soosLogger.warn("Failing the build.");
+      soosLogger.debug(`Exiting with code ${exitCode}`);
       exit(exitCode);
     } catch (error) {
       if (projectHash && branchHash && analysisId)
