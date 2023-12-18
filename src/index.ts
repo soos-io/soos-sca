@@ -332,8 +332,13 @@ class SOOSSCAAnalysis {
       const exitCode = getExitCodeFromStatus(scanStatus);
       if (exitCode > 0 && this.args.onFailure === OnFailure.Fail) {
         soosLogger.warn("Failing the build.");
+        exit(exitCode);
+      } else if (exitCode === 2 && this.args.onFailure === OnFailure.Continue) {
+        soosLogger.warn("Issues found but continuing the build.");
+        if (this.args.integrationName === IntegrationName.AzureDevOps) {
+          exit(exitCode);
+        }
       }
-      exit(exitCode);
     } catch (error) {
       if (projectHash && branchHash && analysisId)
         await analysisService.updateScanStatus({
