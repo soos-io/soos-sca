@@ -6,8 +6,6 @@ import { version } from "../package.json";
 import {
   IntegrationName,
   IntegrationType,
-  LogLevel,
-  OnFailure,
   OutputFormat,
   PackageManagerType,
   SOOS_CONSTANTS,
@@ -16,8 +14,6 @@ import {
   soosLogger,
 } from "@soos-io/api-client";
 import {
-  ensureEnumValue,
-  ensureNonEmptyValue,
   obfuscateProperties,
   formatBytes,
   getAnalysisExitCode,
@@ -27,7 +23,9 @@ import { SOOS_SCA_CONSTANTS } from "./constants";
 import { exit } from "process";
 import { IUploadManifestFilesResponse } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
 import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
-import AnalysisArgumentParser from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
+import AnalysisArgumentParser, {
+  IBaseScanArguments,
+} from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
 import { removeDuplicates } from "./utilities";
 
 interface IManifestFile {
@@ -36,32 +34,12 @@ interface IManifestFile {
   path: string;
 }
 
-interface SOOSSCAAnalysisArgs {
-  apiKey: string;
-  apiURL: string;
-  appVersion: string;
-  branchName: string;
-  branchUri: string;
-  buildUri: string;
-  buildVersion: string;
-  clientId: string;
-  commitHash: string;
-  contributingDeveloperId: string;
-  contributingDeveloperSource: string;
-  contributingDeveloperSourceName: string;
+interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   directoriesToExclude: Array<string>;
   filesToExclude: Array<string>;
-  integrationName: IntegrationName;
-  integrationType: IntegrationType;
-  logLevel: LogLevel;
-  onFailure: OnFailure;
-  operatingEnvironment: string;
   outputFormat: OutputFormat;
   packageManagers: Array<string>;
-  projectName: string;
-  scriptVersion: string;
   sourceCodePath: string;
-  verbose: boolean;
   workingDirectory: string;
 }
 
@@ -94,36 +72,26 @@ class SOOSSCAAnalysis {
       required: false,
     });
 
-    analysisArgumentParser.argumentParser.add_argument("--onFailure", {
-      help: "Action to perform when the scan fails. Options: fail_the_build, continue_on_failure.",
-      default: OnFailure.Continue,
-      required: false,
-      type: (value: string) => {
-        return ensureEnumValue(OnFailure, value);
+    analysisArgumentParser.addEnumArgument(
+      analysisArgumentParser.argumentParser,
+      "--outputFormat",
+      OutputFormat,
+      {
+        help: "Output format for vulnerabilities: only the value SARIF is available at the moment",
+        required: false,
       },
-    });
+    );
 
-    analysisArgumentParser.argumentParser.add_argument("--outputFormat", {
-      help: "Output format for vulnerabilities: only the value SARIF is available at the moment",
-      required: false,
-      type: (value: string) => {
-        return ensureEnumValue(OutputFormat, value);
+    analysisArgumentParser.addEnumArgument(
+      analysisArgumentParser.argumentParser,
+      "--packageManagers",
+      PackageManagerType,
+      {
+        help: "A package manager to include when searching for manifest files.",
+        required: false,
+        default: [],
       },
-    });
-
-    analysisArgumentParser.argumentParser.add_argument("--packageManagers", {
-      help: "A list of package managers, delimited by comma, to include when searching for manifest files.",
-      required: false,
-      default: [],
-      type: (value: string) => {
-        if (value.length === 0) return [];
-        const values = value.split(",");
-        values.map((value) => {
-          return ensureEnumValue(PackageManagerType, value);
-        });
-        return values;
-      },
-    });
+    );
 
     analysisArgumentParser.argumentParser.add_argument("--sourceCodePath", {
       help: "Root path to begin recursive search for manifests.",
@@ -157,8 +125,8 @@ class SOOSSCAAnalysis {
         branchName: this.args.branchName,
         commitHash: this.args.commitHash,
         buildVersion: this.args.buildVersion,
-        buildUri: this.args.buildUri,
-        branchUri: this.args.branchUri,
+        buildUri: this.args.buildURI,
+        branchUri: this.args.branchURI,
         operatingEnvironment: this.args.operatingEnvironment,
         integrationName: this.args.integrationName,
         integrationType: this.args.integrationType,
@@ -483,8 +451,6 @@ class SOOSSCAAnalysis {
           2,
         ),
       );
-      ensureNonEmptyValue(args.clientId, "clientId");
-      ensureNonEmptyValue(args.apiKey, "apiKey");
       soosLogger.logLineSeparator();
       const soosSCAAnalysis = new SOOSSCAAnalysis(args);
       await soosSCAAnalysis.runAnalysis();
