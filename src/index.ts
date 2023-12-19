@@ -26,7 +26,7 @@ import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
 import AnalysisArgumentParser, {
   IBaseScanArguments,
 } from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
-import { removeDuplicates } from "./utilities";
+import { getAvailablePackageManagers, removeDuplicates } from "./utilities";
 
 interface IManifestFile {
   packageManager: string;
@@ -85,11 +85,13 @@ class SOOSSCAAnalysis {
     analysisArgumentParser.addEnumArgument(
       analysisArgumentParser.argumentParser,
       "--packageManagers",
+      getAvailablePackageManagers() as unknown as Record<string, unknown>,
       {
         help: "A list of package managers, delimited by comma, to include when searching for manifest files.",
         required: false,
         default: [],
       },
+      true,
     );
 
     analysisArgumentParser.argumentParser.add_argument("--sourceCodePath", {
@@ -292,7 +294,6 @@ class SOOSSCAAnalysis {
           scanType,
           analysisId: result.analysisId,
           outputFormat: this.args.outputFormat,
-          sourceCodePath: this.args.sourceCodePath,
           workingDirectory: this.args.workingDirectory,
         });
       }
