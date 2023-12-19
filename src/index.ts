@@ -296,7 +296,6 @@ class SOOSSCAAnalysis {
           scanType,
           analysisId: result.analysisId,
           outputFormat: this.args.outputFormat,
-          sourceCodePath: this.args.sourceCodePath,
           workingDirectory: this.args.workingDirectory,
         });
       }
