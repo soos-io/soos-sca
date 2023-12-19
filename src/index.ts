@@ -7,6 +7,7 @@ import {
   IntegrationName,
   IntegrationType,
   OutputFormat,
+  PackageManagerType,
   SOOS_CONSTANTS,
   ScanStatus,
   ScanType,
@@ -26,7 +27,7 @@ import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
 import AnalysisArgumentParser, {
   IBaseScanArguments,
 } from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
-import { getAvailablePackageManagers, removeDuplicates } from "./utilities";
+import { removeDuplicates } from "./utilities";
 
 interface IManifestFile {
   packageManager: string;
@@ -85,7 +86,19 @@ class SOOSSCAAnalysis {
     analysisArgumentParser.addEnumArgument(
       analysisArgumentParser.argumentParser,
       "--packageManagers",
-      getAvailablePackageManagers() as unknown as Record<string, unknown>,
+      {
+        [PackageManagerType.CFamily]: PackageManagerType.CFamily,
+        [PackageManagerType.Dart]: PackageManagerType.Dart,
+        [PackageManagerType.Erlang]: PackageManagerType.Erlang,
+        [PackageManagerType.Go]: PackageManagerType.Go,
+        [PackageManagerType.Homebrew]: PackageManagerType.Homebrew,
+        [PackageManagerType.Java]: PackageManagerType.Java,
+        [PackageManagerType.NPM]: PackageManagerType.NPM,
+        [PackageManagerType.NuGet]: PackageManagerType.NuGet,
+        [PackageManagerType.Php]: PackageManagerType.Php,
+        [PackageManagerType.Python]: PackageManagerType.Python,
+        [PackageManagerType.Rust]: PackageManagerType.Rust,
+      },
       {
         help: "A list of package managers, delimited by comma, to include when searching for manifest files.",
         required: false,
