@@ -7,7 +7,6 @@ import {
   IntegrationName,
   IntegrationType,
   OutputFormat,
-  PackageManagerType,
   SOOS_CONSTANTS,
   ScanStatus,
   ScanType,
@@ -17,7 +16,7 @@ import {
   obfuscateProperties,
   formatBytes,
   getAnalysisExitCode,
-  ensureEnumValue,
+  isNil,
 } from "@soos-io/api-client/dist/utilities";
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { SOOS_SCA_CONSTANTS } from "./constants";
@@ -39,7 +38,7 @@ interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   directoriesToExclude: Array<string>;
   filesToExclude: Array<string>;
   outputFormat: OutputFormat;
-  packageManagers: Array<string>;
+  packageManagers?: Array<string>;
   sourceCodePath: string;
   workingDirectory: string;
 }
@@ -83,19 +82,15 @@ class SOOSSCAAnalysis {
       },
     );
 
-    analysisArgumentParser.argumentParser.add_argument("--packageManagers", {
-      help: "A list of package managers, delimited by comma, to include when searching for manifest files.",
-      required: false,
-      default: [],
-      type: (value: string) => {
-        if (value.length === 0) return [];
-        const values = value.split(",");
-        values.map((value) => {
-          return ensureEnumValue(PackageManagerType, value, "--packageManagers");
-        });
-        return values;
+    analysisArgumentParser.addEnumArgument(
+      analysisArgumentParser.argumentParser,
+      "--packageManagers",
+      {
+        help: "A list of package managers, delimited by comma, to include when searching for manifest files.",
+        required: false,
+        default: [],
       },
-    });
+    );
 
     analysisArgumentParser.argumentParser.add_argument("--sourceCodePath", {
       help: "Root path to begin recursive search for manifests.",
@@ -164,14 +159,15 @@ class SOOSSCAAnalysis {
         });
 
       const filteredPackageManagers =
-        this.args.packageManagers.length === 0
+        isNil(this.args.packageManagers) || this.args.packageManagers.length === 0
           ? supportedManifestsResponse
-          : supportedManifestsResponse.filter((packageManagerManifests) =>
-              this.args.packageManagers.some((pm) =>
-                StringUtilities.areEqual(pm, packageManagerManifests.packageManager, {
-                  sensitivity: "base",
-                }),
-              ),
+          : supportedManifestsResponse.filter(
+              (packageManagerManifests) =>
+                this.args.packageManagers?.some((pm) =>
+                  StringUtilities.areEqual(pm, packageManagerManifests.packageManager, {
+                    sensitivity: "base",
+                  }),
+                ),
             );
 
       const settings = await analysisService.projectsApiClient.getProjectSettings({
