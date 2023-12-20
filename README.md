@@ -45,23 +45,23 @@ See [Windows Batch File Gist](https://gist.githubusercontent.com/soostech/37134f
 
 | Argument | Default | Description |
 | --- | --- | --- |
-| `--apiKey` | <None> | SOOS API Key - get yours from [SOOS Integration](https://app.soos.io/integrate/sca). Uses `SOOS_API_KEY` env value if present.  
-| `--branchName` | <None> | The name of the branch from the SCM System. |
-| `--branchURI` | <None> | The URI to the branch from the SCM System. |
-| `--buildURI` | <None> | URI to CI build info. |
-| `--buildVersion` | <None> | Version of application build artifacts. |
-| `--clientId` | <None> | SOOS Client ID - get yours from [SOOS Integration](https://app.soos.io/integrate/sca). Uses `SOOS_API_CLIENT` env value if present. |
-| `--commitHash` | <None> | The commit hash value from the SCM System. |
+| `--apiKey` |  | SOOS API Key - get yours from [SOOS Integration](https://app.soos.io/integrate/sca). Uses `SOOS_API_KEY` env value if present.  
+| `--branchName` |  | The name of the branch from the SCM System. |
+| `--branchURI` |  | The URI to the branch from the SCM System. |
+| `--buildURI` |  | URI to CI build info. |
+| `--buildVersion` |  | Version of application build artifacts. |
+| `--clientId` |  | SOOS Client ID - get yours from [SOOS Integration](https://app.soos.io/integrate/sca). Uses `SOOS_API_CLIENT` env value if present. |
+| `--commitHash` |  | The commit hash value from the SCM System. |
 | `--directoriesToExclude` | `**/node_modules/**, "**/bin/**", "**/obj/**", "**/lib/**` | Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/** |
-| `--filesToExclude` | <None> | Listing of files or patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt |
+| `--filesToExclude` |  | Listing of files or patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt |
 | `--logLevel` | `INFO` | Minimum level to show logs: PASS, IGNORE, INFO, WARN or FAIL. |
 | `--onFailure` | `continue_on_failure` | Action to perform when the scan fails. Options: fail_the_build, continue_on_failure. |
-| `--operatingEnvironment` | <None> | Set Operating environment for information purposes only. |
-| `--outputFormat` | <None> | Output format for vulnerabilities: only the value SARIF is available at the moment. |
-| `--packageManagers` | <None> | A list of package managers, delimited by comma, to include when searching for manifest files. |
-| `--projectName` | <None> | Project Name - this is what will be displayed in the SOOS app. |
-| `--sarif` | <None> | Generates SARIF report. |
-| `--scriptVersion` | <None> | None provided. |
+| `--operatingEnvironment` |  | Set Operating environment for information purposes only. |
+| `--outputFormat` |  | Output format for vulnerabilities: only the value SARIF is available at the moment. |
+| `--packageManagers` |  | A list of package managers, delimited by comma, to include when searching for manifest files. |
+| `--projectName` |  | Project Name - this is what will be displayed in the SOOS app. |
+| `--sarif` |  | Generates SARIF report. |
+| `--scriptVersion` |  | None provided. |
 | `--sourceCodePath` | `process.cwd()` | Root path to begin recursive search for manifests. |
 | `--verbose` | `false` | Enable verbose logging. |
 | `--workingDirectory` | `process.cwd()` | Absolute path where SOOS may write and read persistent files for the given build. eg Correct: /tmp/workspace/ | Incorrect: ./bin/start/ |
