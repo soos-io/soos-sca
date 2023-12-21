@@ -54,7 +54,7 @@ See [Windows Batch File Gist](https://gist.github.com/soostech/d5f8c2a929902f302
 | `--commitHash` |  | The commit hash value from the SCM System. |
 | `--directoriesToExclude` | `**/node_modules/**, "**/bin/**", "**/obj/**", "**/lib/**` | Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/** |
 | `--filesToExclude` |  | Listing of files or patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt |
-| `--logLevel` | `INFO` | Minimum level to show logs: PASS, IGNORE, INFO, WARN or FAIL. |
+| `--logLevel`  |  | Minimum level to show logs: DEBUG, INFO, WARN, FAIL, ERROR. |
 | `--onFailure` | `continue_on_failure` | Action to perform when the scan fails. Options: fail_the_build, continue_on_failure. |
 | `--operatingEnvironment` |  | Set Operating environment for information purposes only. |
 | `--outputFormat` |  | Output format for vulnerabilities: only the value SARIF is available at the moment. |
