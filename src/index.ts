@@ -97,6 +97,7 @@ class SOOSSCAAnalysis {
         [PackageManagerType.NuGet]: PackageManagerType.NuGet,
         [PackageManagerType.Php]: PackageManagerType.Php,
         [PackageManagerType.Python]: PackageManagerType.Python,
+        [PackageManagerType.Ruby]: PackageManagerType.Ruby,
         [PackageManagerType.Rust]: PackageManagerType.Rust,
       },
       {
