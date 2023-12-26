@@ -16,8 +16,8 @@ import {
 import {
   obfuscateProperties,
   formatBytes,
-  getAnalysisExitCode,
   isNil,
+  getAnalysisExitCodeWithMessage,
 } from "@soos-io/api-client/dist/utilities";
 import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { SOOS_SCA_CONSTANTS } from "./constants";
@@ -312,13 +312,9 @@ class SOOSSCAAnalysis {
         });
       }
 
-      const exitCode = getAnalysisExitCode(
-        scanStatus,
-        this.args.integrationName,
-        this.args.onFailure,
-      );
-      soosLogger.debug(`Exiting with code ${exitCode}`);
-      exit(exitCode);
+      const exitCodeWithMessage = getAnalysisExitCodeWithMessage(scanStatus, this.args.onFailure);
+      soosLogger.always(`${exitCodeWithMessage.message} - exit ${exitCodeWithMessage.exitCode}`);
+      exit(exitCodeWithMessage.exitCode);
     } catch (error) {
       if (projectHash && branchHash && analysisId)
         await analysisService.updateScanStatus({
@@ -332,6 +328,7 @@ class SOOSSCAAnalysis {
           scanStatusUrl,
         });
       soosLogger.error(error);
+      soosLogger.always(`${error} - exit 1`);
       exit(1);
     }
   }
@@ -471,6 +468,7 @@ class SOOSSCAAnalysis {
       await soosSCAAnalysis.runAnalysis();
     } catch (error) {
       soosLogger.error(`Error on createAndRun: ${error}`);
+      soosLogger.always(`Error on createAndRun: ${error} - exit 1`);
       exit(1);
     }
   }
