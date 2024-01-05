@@ -18,8 +18,8 @@ import {
   formatBytes,
   isNil,
   getAnalysisExitCodeWithMessage,
+  StringUtilities,
 } from "@soos-io/api-client/dist/utilities";
-import StringUtilities from "@soos-io/api-client/dist/StringUtilities";
 import { SOOS_SCA_CONSTANTS } from "./constants";
 import { exit } from "process";
 import { IUploadManifestFilesResponse } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
