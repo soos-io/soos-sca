@@ -177,13 +177,12 @@ class SOOSSCAAnalysis {
       const filteredPackageManagers =
         isNil(this.args.packageManagers) || this.args.packageManagers.length === 0
           ? supportedManifestsResponse
-          : supportedManifestsResponse.filter(
-              (packageManagerManifests) =>
-                this.args.packageManagers?.some((pm) =>
-                  StringUtilities.areEqual(pm, packageManagerManifests.packageManager, {
-                    sensitivity: "base",
-                  }),
-                ),
+          : supportedManifestsResponse.filter((packageManagerManifests) =>
+              this.args.packageManagers?.some((pm) =>
+                StringUtilities.areEqual(pm, packageManagerManifests.packageManager, {
+                  sensitivity: "base",
+                }),
+              ),
             );
 
       const settings = await analysisService.projectsApiClient.getProjectSettings({
