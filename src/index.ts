@@ -48,13 +48,14 @@ class SOOSSCAAnalysis {
   constructor(private args: SOOSSCAAnalysisArgs) {}
 
   static parseArgs(): SOOSSCAAnalysisArgs {
-    const analysisArgumentParser = AnalysisArgumentParser.create(ScanType.SCA);
-
-    analysisArgumentParser.addBaseScanArguments(
+    const analysisArgumentParser = AnalysisArgumentParser.create(
       IntegrationName.SoosSca,
       IntegrationType.Script,
+      ScanType.SCA,
       version,
     );
+
+    analysisArgumentParser.addBaseScanArguments();
 
     analysisArgumentParser.argumentParser.add_argument("--directoriesToExclude", {
       help: "Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/**",
