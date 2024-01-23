@@ -48,13 +48,14 @@ class SOOSSCAAnalysis {
   constructor(private args: SOOSSCAAnalysisArgs) {}
 
   static parseArgs(): SOOSSCAAnalysisArgs {
-    const analysisArgumentParser = AnalysisArgumentParser.create(ScanType.SCA);
-
-    analysisArgumentParser.addBaseScanArguments(
+    const analysisArgumentParser = AnalysisArgumentParser.create(
       IntegrationName.SoosSca,
       IntegrationType.Script,
+      ScanType.SCA,
       version,
     );
+
+    analysisArgumentParser.addBaseScanArguments();
 
     analysisArgumentParser.argumentParser.add_argument("--directoriesToExclude", {
       help: "Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/**",
@@ -177,13 +178,12 @@ class SOOSSCAAnalysis {
       const filteredPackageManagers =
         isNil(this.args.packageManagers) || this.args.packageManagers.length === 0
           ? supportedManifestsResponse
-          : supportedManifestsResponse.filter(
-              (packageManagerManifests) =>
-                this.args.packageManagers?.some((pm) =>
-                  StringUtilities.areEqual(pm, packageManagerManifests.packageManager, {
-                    sensitivity: "base",
-                  }),
-                ),
+          : supportedManifestsResponse.filter((packageManagerManifests) =>
+              this.args.packageManagers?.some((pm) =>
+                StringUtilities.areEqual(pm, packageManagerManifests.packageManager, {
+                  sensitivity: "base",
+                }),
+              ),
             );
 
       const settings = await analysisService.projectsApiClient.getProjectSettings({
