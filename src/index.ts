@@ -354,7 +354,10 @@ class SOOSSCAAnalysis {
     manifestFiles: Array<string>;
     hasMoreThanMaximumManifests: boolean;
   }): Promise<IUploadManifestFilesResponse> {
-    const formData = await analysisService.getAnalysisFilesAsFormData(manifestFiles, process.cwd());
+    const formData = await analysisService.getAnalysisFilesAsFormData(
+      manifestFiles,
+      Path.resolve(this.args.sourceCodePath),
+    );
 
     const response = await analysisService.analysisApiClient.uploadManifestFiles({
       clientId,
