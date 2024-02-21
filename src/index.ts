@@ -356,7 +356,7 @@ class SOOSSCAAnalysis {
   }): Promise<IUploadManifestFilesResponse> {
     const formData = await analysisService.getAnalysisFilesAsFormData(
       manifestFiles,
-      this.args.sourceCodePath,
+      Path.resolve(this.args.sourceCodePath),
     );
 
     const response = await analysisService.analysisApiClient.uploadManifestFiles({
