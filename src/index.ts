@@ -111,7 +111,7 @@ class SOOSSCAAnalysis {
 
     analysisArgumentParser.addEnumArgument(
       analysisArgumentParser.argumentParser,
-      "--fileLocation",
+      "--fileMatchType",
       FileMatchType,
       {
         help: "The files to locate",
