@@ -28,11 +28,35 @@ import AnalysisArgumentParser, {
   IBaseScanArguments,
 } from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
 import { removeDuplicates } from "./utilities";
+//import fs from "fs";
+//import crypto from "crypto";
+
+// TODO: why does require give us the correct file hash, but import does not?
+var fs = require("fs");
+var crypto = require("crypto");
 
 interface IManifestFile {
   packageManager: string;
   name: string;
   path: string;
+}
+
+interface ISoosFileHash {
+  hashAlgorithm: string;
+  filename: string;
+  path: string;
+  digest: string;
+}
+
+interface ISoosHashesManifest {
+  packageManager: string;
+  fileHashes: Array<ISoosFileHash>;
+}
+
+enum FileMatchType {
+  Manifest = "Manifest",
+  FileHash = "FileHash",
+  ManifestAndFileHash = "ManifestAndFileHash",
 }
 
 interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
@@ -42,6 +66,7 @@ interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   packageManagers?: Array<string>;
   sourceCodePath: string;
   workingDirectory: string;
+  fileMatchType?: FileMatchType | null;
 }
 
 class SOOSSCAAnalysis {
@@ -81,6 +106,17 @@ class SOOSSCAAnalysis {
       {
         help: "Output format for vulnerabilities: only the value SARIF is available at the moment",
         required: false,
+      },
+    );
+
+    analysisArgumentParser.addEnumArgument(
+      analysisArgumentParser.argumentParser,
+      "--fileLocation",
+      FileMatchType,
+      {
+        help: "The files to locate",
+        required: false,
+        default: FileMatchType.FileHash,
       },
     );
 
@@ -191,14 +227,68 @@ class SOOSSCAAnalysis {
         projectHash,
       });
 
-      const manifestFiles = this.searchForManifestFiles({
-        packageManagerManifests: filteredPackageManagers,
-        useLockFile: settings.useLockFile ?? false,
-      });
+      soosLogger.info("FileLocation", this.args.fileMatchType);
+      const soosHashesManifests =
+        !this.args.fileMatchType || // TODO: PA-14211 remove when arg parsing is fixed
+        this.args.fileMatchType === FileMatchType.FileHash ||
+        this.args.fileMatchType === FileMatchType.ManifestAndFileHash
+          ? this.searchForHashableFiles({
+              // TODO: pull this from the API
+              archiveFileFormats: [
+                {
+                  packageManager: PackageManagerType.Java,
+                  patterns: [".jar"],
+                },
+              ],
+              contentFileFormats: null,
+            })
+          : [];
 
-      if (manifestFiles.length === 0) {
-        const errorMessage =
-          "No valid manifests found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-manifests-found";
+      // TODO: PA-14211 we could probably just add this to the form files directly
+      soosLogger.info("SOOS Hashes", soosHashesManifests.length);
+      if (soosHashesManifests) {
+        for (const soosHashesManifest of soosHashesManifests) {
+          FileSystem.writeFileSync(
+            Path.join(
+              this.args.workingDirectory,
+              `${soosHashesManifest.packageManager}${SOOS_SCA_CONSTANTS.SoosFileHashesManifest}`,
+            ),
+            JSON.stringify(soosHashesManifest, null, 2),
+          );
+        }
+      }
+
+      const manifestFiles =
+        this.args.fileMatchType === FileMatchType.FileHash ||
+        this.args.fileMatchType === FileMatchType.ManifestAndFileHash
+          ? this.searchForManifestFiles({
+              packageManagerManifests: filteredPackageManagers,
+              useLockFile: settings.useLockFile ?? false,
+            })
+          : [];
+
+      let errorMessage = null;
+
+      if (this.args.fileMatchType === FileMatchType.Manifest && manifestFiles.length === 0) {
+        errorMessage =
+          "No valid files found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-manifests-found";
+      }
+
+      if (this.args.fileMatchType === FileMatchType.FileHash && soosHashesManifests.length === 0) {
+        errorMessage =
+          "No valid hashable files found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-hashable-files-found";
+      }
+
+      if (
+        this.args.fileMatchType === FileMatchType.ManifestAndFileHash &&
+        soosHashesManifests.length === 0 &&
+        manifestFiles.length === 0
+      ) {
+        errorMessage =
+          "No valid files or hashable files found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-manifests-found and https://kb.soos.io/help/error-no-valid-hashable-files-found";
+      }
+
+      if (errorMessage) {
         await analysisService.updateScanStatus({
           clientId: this.args.clientId,
           projectHash,
@@ -245,6 +335,7 @@ class SOOSSCAAnalysis {
       let allUploadsFailed = true;
       for (const [packageManager, files] of Object.entries(manifestsByPackageManager)) {
         try {
+          // TODO: PA-14211 can we add the soos_hashes.json directly
           const manifestUploadResponse = await this.uploadManifestFiles({
             analysisService,
             clientId: this.args.clientId,
@@ -384,6 +475,17 @@ class SOOSSCAAnalysis {
     }>;
     useLockFile: boolean;
   }): Array<IManifestFile> {
+    // TODO: PA-14211 we can probably replace this if we just add to the form files directly
+    packageManagerManifests.push({
+      packageManager: PackageManagerType.Unknown,
+      manifests: [
+        {
+          pattern: `*${SOOS_SCA_CONSTANTS.SoosFileHashesManifest}`,
+          isLockFile: false,
+        },
+      ],
+    });
+
     const currentDirectory = process.cwd();
     soosLogger.info(
       `Setting current working directory to project path '${this.args.sourceCodePath}'.`,
@@ -450,6 +552,86 @@ class SOOSSCAAnalysis {
     soosLogger.info(`${manifestFiles.length} manifest files found.`);
 
     return manifestFiles;
+  }
+
+  private searchForHashableFiles({
+    archiveFileFormats,
+    contentFileFormats,
+  }: {
+    archiveFileFormats: Array<{
+      packageManager: string;
+      patterns: Array<string>;
+    }>;
+    contentFileFormats: null | Array<{
+      packageManager: string;
+      patterns: Array<string>;
+    }>;
+  }): Array<ISoosHashesManifest> {
+    const currentDirectory = process.cwd();
+    soosLogger.info(
+      `Setting current working directory to project path '${this.args.sourceCodePath}'.`,
+    );
+
+    process.chdir(this.args.sourceCodePath);
+    soosLogger.info("ff", archiveFileFormats.length);
+    const archiveFiles = archiveFileFormats.reduce<Array<ISoosHashesManifest>>(
+      (accumulator, archiveFiles) => {
+        const matches = archiveFiles.patterns.map((matchPattern) => {
+          const manifestGlobPattern = matchPattern.startsWith(".")
+            ? `*${matchPattern}` // ends with
+            : matchPattern; // wildcard match
+
+          const pattern = `**/${manifestGlobPattern}`;
+          const files = Glob.sync(pattern, {
+            ignore: [
+              ...(this.args.filesToExclude || []),
+              ...this.args.directoriesToExclude,
+              SOOS_SCA_CONSTANTS.SoosPackageDirToExclude,
+            ],
+            nocase: true,
+          });
+
+          // This is needed to resolve the path as an absolute opposed to trying to open the file at current directory.
+          const absolutePathFiles = files.map((x) => Path.resolve(x));
+          soosLogger.info("abs", absolutePathFiles.length);
+          const matchingFilesMessage = `${absolutePathFiles.length} files found matching pattern '${matchPattern}'.`;
+          if (absolutePathFiles.length > 0) {
+            soosLogger.info(matchingFilesMessage);
+          } else {
+            soosLogger.verboseInfo(matchingFilesMessage);
+          }
+
+          return absolutePathFiles;
+        });
+
+        const soosFileHashes = matches.flat().map((filePath): ISoosFileHash => {
+          const filename = Path.basename(filePath);
+          const fileContent = fs.readFileSync(filePath);
+          const digest = crypto.createHash("sha256").update(fileContent, "utf8").digest("hex");
+
+          soosLogger.info(`Found '${filePath}' (${digest})`);
+          return {
+            hashAlgorithm: "sha256",
+            filename: filename,
+            path: filePath,
+            digest: digest,
+          };
+        });
+
+        return accumulator.concat({
+          packageManager: archiveFiles.packageManager,
+          fileHashes: soosFileHashes,
+        });
+      },
+      [],
+    );
+
+    // TODO: contentFileFormats
+    process.chdir(currentDirectory);
+    soosLogger.info(`Setting current working directory back to '${currentDirectory}'.\n`);
+    soosLogger.info(`${archiveFiles.length} manifest files found.`);
+
+    return archiveFiles;
   }
 
   static async createAndRun(): Promise<void> {
