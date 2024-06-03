@@ -1,10 +1,10 @@
 {
   "name": "@soos-io/soos-sca",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "description": "SOOS Security Analysis CI - Check for vulnerabilities, policy violations and more!",
   "main": "bin/index.js",
   "scripts": {
-    "setup:install": "npm install",
+    "setup:install": "npm install --registry https://registry.npmjs.org/",
     "setup:clean-install": "npm ci",
     "setup:update": "npx npm-check -u",
     "setup:clean": "npx rimraf node_modules && npx rimraf package-lock.json",
@@ -16,7 +16,7 @@
     "check": "npm run format && npm run typecheck && npm outdated",
     "link:soos-api-client": "npm link @soos-io/api-client && npm run build && npm link",
     "patch": "npm version patch --no-git-tag-version",
-    "patch-api-client": "npm run patch && npm run setup:clean && npm install @soos-io/api-client@latest --save-exact && npm install && npm run check"
+    "patch-api-client": "npm run patch && npm run setup:clean && npm install @soos-io/api-client@latest --registry https://registry.npmjs.org/ --save-exact && npm install --registry https://registry.npmjs.org/ && npm run check"
   },
   "repository": {
     "type": "git",
