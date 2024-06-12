@@ -19,7 +19,7 @@ import {
 import { SOOS_SCA_CONSTANTS } from "./constants";
 import { exit } from "process";
 import { IUploadManifestFilesResponse } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
-import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
+import AnalysisService, { IManifestFile } from "@soos-io/api-client/dist/services/AnalysisService";
 import AnalysisArgumentParser, {
   IBaseScanArguments,
 } from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
@@ -81,7 +81,7 @@ class SOOSSCAAnalysis {
       "--fileMatchType",
       FileMatchTypeEnum,
       {
-        help: "The way to locate files for scanning, either look for manifest files and/or generate file hashes.",
+        help: "The method to use to locate files for scanning, looking for manifest files and/or files to hash.",
         required: false,
         default: FileMatchTypeEnum.FileHash,
       },
@@ -180,7 +180,6 @@ class SOOSSCAAnalysis {
         filesToExclude: this.args.filesToExclude,
         directoriesToExclude: this.args.directoriesToExclude,
         sourceCodePath: this.args.sourceCodePath,
-        workingDirectory: this.args.workingDirectory,
         packageManagers: this.args.packageManagers ?? [],
         fileMatchType: this.args.fileMatchType ?? FileMatchTypeEnum.Manifest,
       });
