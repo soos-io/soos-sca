@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-import * as FileSystem from "fs";
-import * as Glob from "glob";
 import * as Path from "path";
 import { version } from "../package.json";
 import {
@@ -15,25 +13,18 @@ import {
 } from "@soos-io/api-client";
 import {
   obfuscateProperties,
-  formatBytes,
-  isNil,
   getAnalysisExitCodeWithMessage,
   StringUtilities,
 } from "@soos-io/api-client/dist/utilities";
 import { SOOS_SCA_CONSTANTS } from "./constants";
 import { exit } from "process";
 import { IUploadManifestFilesResponse } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
-import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
+import AnalysisService, { IManifestFile } from "@soos-io/api-client/dist/services/AnalysisService";
 import AnalysisArgumentParser, {
   IBaseScanArguments,
 } from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
 import { removeDuplicates } from "./utilities";
-
-interface IManifestFile {
-  packageManager: string;
-  name: string;
-  path: string;
-}
+import { FileMatchTypeEnum } from "@soos-io/api-client/dist/enums";
 
 interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   directoriesToExclude: Array<string>;
@@ -42,6 +33,7 @@ interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   packageManagers?: Array<string>;
   sourceCodePath: string;
   workingDirectory: string;
+  fileMatchType?: FileMatchTypeEnum | null;
 }
 
 class SOOSSCAAnalysis {
@@ -81,6 +73,17 @@ class SOOSSCAAnalysis {
       {
         help: "Output format for vulnerabilities: only the value SARIF is available at the moment",
         required: false,
+      },
+    );
+
+    analysisArgumentParser.addEnumArgument(
+      analysisArgumentParser.argumentParser,
+      "--fileMatchType",
+      FileMatchTypeEnum,
+      {
+        help: "The method to use to locate files for scanning, looking for manifest files and/or files to hash.",
+        required: false,
+        default: FileMatchTypeEnum.FileHash,
       },
     );
 
@@ -170,35 +173,45 @@ class SOOSSCAAnalysis {
 
       soosLogger.logLineSeparator();
 
-      const supportedManifestsResponse =
-        await analysisService.analysisApiClient.getSupportedManifests({
-          clientId: this.args.clientId,
-        });
-
-      const filteredPackageManagers =
-        isNil(this.args.packageManagers) || this.args.packageManagers.length === 0
-          ? supportedManifestsResponse
-          : supportedManifestsResponse.filter((packageManagerManifests) =>
-              this.args.packageManagers?.some((pm) =>
-                StringUtilities.areEqual(pm, packageManagerManifests.packageManager, {
-                  sensitivity: "base",
-                }),
-              ),
-            );
-
-      const settings = await analysisService.projectsApiClient.getProjectSettings({
+      // TODO: call const manifestsAndHashableFiles = await analysisService.findManifestsAndHashableFiles()
+      const manifestsAndHashableFiles = await analysisService.findManifestsAndHashableFiles({
         clientId: this.args.clientId,
         projectHash,
+        filesToExclude: this.args.filesToExclude,
+        directoriesToExclude: this.args.directoriesToExclude,
+        sourceCodePath: this.args.sourceCodePath,
+        packageManagers: this.args.packageManagers ?? [],
+        fileMatchType: this.args.fileMatchType ?? FileMatchTypeEnum.Manifest,
       });
 
-      const manifestFiles = this.searchForManifestFiles({
-        packageManagerManifests: filteredPackageManagers,
-        useLockFile: settings.useLockFile ?? false,
-      });
+      const manifestFiles = manifestsAndHashableFiles.manifestFiles ?? [];
+      const soosHashesManifests = manifestsAndHashableFiles.hashManifests ?? [];
 
-      if (manifestFiles.length === 0) {
-        const errorMessage =
-          "No valid manifests found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-manifests-found";
+      let errorMessage = null;
+
+      if (this.args.fileMatchType === FileMatchTypeEnum.Manifest && manifestFiles.length === 0) {
+        errorMessage =
+          "No valid files found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-manifests-found";
+      }
+
+      if (
+        this.args.fileMatchType === FileMatchTypeEnum.FileHash &&
+        soosHashesManifests.length === 0
+      ) {
+        errorMessage =
+          "No valid files to hash were found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-files-to-hash-found";
+      }
+
+      if (
+        this.args.fileMatchType === FileMatchTypeEnum.ManifestAndFileHash &&
+        soosHashesManifests.length === 0 &&
+        manifestFiles.length === 0
+      ) {
+        errorMessage =
+          "No valid files found, cannot continue. For more help, please visit https://kb.soos.io/help/error-no-valid-manifests-found and https://kb.soos.io/help/error-no-valid-files-to-hash-found";
+      }
+
+      if (errorMessage) {
         await analysisService.updateScanStatus({
           clientId: this.args.clientId,
           projectHash,
@@ -245,6 +258,7 @@ class SOOSSCAAnalysis {
       let allUploadsFailed = true;
       for (const [packageManager, files] of Object.entries(manifestsByPackageManager)) {
         try {
+          // TODO: PA-14211 can we add the soos_hashes.json directly
           const manifestUploadResponse = await this.uploadManifestFiles({
             analysisService,
             clientId: this.args.clientId,
@@ -369,87 +383,6 @@ class SOOSSCAAnalysis {
     });
 
     return response;
-  }
-
-  private searchForManifestFiles({
-    packageManagerManifests,
-    useLockFile,
-  }: {
-    packageManagerManifests: Array<{
-      packageManager: string;
-      manifests: Array<{
-        pattern: string;
-        isLockFile: boolean;
-      }>;
-    }>;
-    useLockFile: boolean;
-  }): Array<IManifestFile> {
-    const currentDirectory = process.cwd();
-    soosLogger.info(
-      `Setting current working directory to project path '${this.args.sourceCodePath}'.`,
-    );
-    process.chdir(this.args.sourceCodePath);
-    soosLogger.info(
-      `Lock file setting is ${
-        useLockFile ? "on, ignoring non-lock files" : "off, ignoring lock files"
-      }.`,
-    );
-    const manifestFiles = packageManagerManifests.reduce<Array<IManifestFile>>(
-      (accumulator, packageManagerManifests) => {
-        const matches = packageManagerManifests.manifests
-          .filter((manifest) => useLockFile === manifest.isLockFile)
-          .map((manifest) => {
-            const manifestGlobPattern = manifest.pattern.startsWith(".")
-              ? `*${manifest.pattern}` // ends with
-              : manifest.pattern; // wildcard match
-
-            const pattern = `**/${manifestGlobPattern}`;
-            const files = Glob.sync(pattern, {
-              ignore: [
-                ...(this.args.filesToExclude || []),
-                ...this.args.directoriesToExclude,
-                SOOS_SCA_CONSTANTS.SoosPackageDirToExclude,
-              ],
-              nocase: true,
-            });
-
-            // This is needed to resolve the path as an absolute opposed to trying to open the file at current directory.
-            const absolutePathFiles = files.map((x) => Path.resolve(x));
-
-            const matchingFilesMessage = `${absolutePathFiles.length} files found matching pattern '${pattern}'.`;
-            if (absolutePathFiles.length > 0) {
-              soosLogger.info(matchingFilesMessage);
-            } else {
-              soosLogger.verboseInfo(matchingFilesMessage);
-            }
-
-            return absolutePathFiles;
-          });
-
-        return accumulator.concat(
-          matches.flat().map((filePath): IManifestFile => {
-            const filename = Path.basename(filePath);
-            const fileStats = FileSystem.statSync(filePath);
-            const fileSize = formatBytes(fileStats.size);
-            soosLogger.info(
-              `Found manifest file '${filename}' (${fileSize}) at location '${filePath}'.`,
-            );
-            return {
-              packageManager: packageManagerManifests.packageManager,
-              name: filename,
-              path: filePath,
-            };
-          }),
-        );
-      },
-      [],
-    );
-
-    process.chdir(currentDirectory);
-    soosLogger.info(`Setting current working directory back to '${currentDirectory}'.\n`);
-    soosLogger.info(`${manifestFiles.length} manifest files found.`);
-
-    return manifestFiles;
   }
 
   static async createAndRun(): Promise<void> {
