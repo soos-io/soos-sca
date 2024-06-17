@@ -33,7 +33,7 @@ interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   packageManagers?: Array<string>;
   sourceCodePath: string;
   workingDirectory: string;
-  fileMatchType?: FileMatchTypeEnum | null;
+  fileMatchType: FileMatchTypeEnum;
 }
 
 class SOOSSCAAnalysis {
@@ -83,7 +83,7 @@ class SOOSSCAAnalysis {
       {
         help: "The method to use to locate files for scanning, looking for manifest files and/or files to hash.",
         required: false,
-        default: FileMatchTypeEnum.FileHash,
+        default: FileMatchTypeEnum.Manifest,
       },
     );
 
@@ -181,7 +181,7 @@ class SOOSSCAAnalysis {
         directoriesToExclude: this.args.directoriesToExclude,
         sourceCodePath: this.args.sourceCodePath,
         packageManagers: this.args.packageManagers ?? [],
-        fileMatchType: this.args.fileMatchType ?? FileMatchTypeEnum.Manifest,
+        fileMatchType: this.args.fileMatchType,
       });
 
       const manifestFiles = manifestsAndHashableFiles.manifestFiles ?? [];
