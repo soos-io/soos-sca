@@ -103,6 +103,7 @@ class SOOSSCAAnalysis {
         [PackageManagerType.Python]: PackageManagerType.Python,
         [PackageManagerType.Ruby]: PackageManagerType.Ruby,
         [PackageManagerType.Rust]: PackageManagerType.Rust,
+        [PackageManagerType.Unity]: PackageManagerType.Unity,
       },
       {
         help: "A list of package managers, delimited by comma, to include when searching for manifest files.",
