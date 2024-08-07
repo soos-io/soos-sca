@@ -1,6 +1,6 @@
 {
   "name": "@soos-io/soos-sca",
-  "version": "3.0.5",
+  "version": "3.0.7",
   "description": "SOOS Security Analysis CI - Check for vulnerabilities, policy violations and more!",
   "main": "bin/index.js",
   "scripts": {
@@ -42,16 +42,16 @@
   },
   "homepage": "https://github.com/soos-io/soos-sca#readme",
   "dependencies": {
-    "@soos-io/api-client": "0.3.3",
+    "@soos-io/api-client": "0.3.4",
     "argparse": "^2.0.1",
     "glob": "^10.4.5",
     "tslib": "^2.6.2"
   },
   "devDependencies": {
     "@types/argparse": "^2.0.15",
-    "@types/node": "^20.14.11",
+    "@types/node": "^20.14.14",
     "prettier": "^3.3.3",
-    "typescript": "^5.4.2"
+    "typescript": "^5.5.4"
   },
   "bin": {
     "soos-sca": "bin/index.js"
