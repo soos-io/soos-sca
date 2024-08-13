@@ -174,7 +174,6 @@ class SOOSSCAAnalysis {
 
       soosLogger.logLineSeparator();
 
-      // TODO: call const manifestsAndHashableFiles = await analysisService.findManifestsAndHashableFiles()
       const manifestsAndHashableFiles = await analysisService.findManifestsAndHashableFiles({
         clientId: this.args.clientId,
         projectHash,
