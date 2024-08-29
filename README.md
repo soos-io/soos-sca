@@ -63,7 +63,6 @@ See [Windows Batch File Gist](https://gist.github.com/soostech/d5f8c2a929902f302
 | `--sarif` |  | Generates SARIF report. |
 | `--scriptVersion` |  | None provided. |
 | `--sourceCodePath` | `process.cwd()` | Root path to begin recursive search for manifests. |
-| `--verbose` | `false` | Enable verbose logging. |
 | `--workingDirectory` | `process.cwd()` | Absolute path where SOOS may write and read persistent files for the given build. eg Correct: /tmp/workspace/ | Incorrect: ./bin/start/ |
 
 ## Feedback and Support
