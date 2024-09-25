@@ -103,6 +103,7 @@ class SOOSSCAAnalysis {
         [PackageManagerType.Python]: PackageManagerType.Python,
         [PackageManagerType.Ruby]: PackageManagerType.Ruby,
         [PackageManagerType.Rust]: PackageManagerType.Rust,
+        [PackageManagerType.Swift]: PackageManagerType.Swift,
         [PackageManagerType.Unity]: PackageManagerType.Unity,
       },
       {
