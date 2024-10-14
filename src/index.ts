@@ -15,6 +15,7 @@ import {
   obfuscateProperties,
   getAnalysisExitCodeWithMessage,
   StringUtilities,
+  isScanDone,
 } from "@soos-io/api-client/dist/utilities";
 import { SOOS_SCA_CONSTANTS } from "./constants";
 import { exit } from "process";
@@ -138,6 +139,7 @@ class SOOSSCAAnalysis {
     let branchHash: string | undefined;
     let analysisId: string | undefined;
     let scanStatusUrl: string | undefined;
+    let scanStatus: ScanStatus | undefined;
 
     try {
       const result = await analysisService.setupScan({
@@ -308,7 +310,7 @@ class SOOSSCAAnalysis {
         scanUrl: result.scanUrl,
       });
 
-      const scanStatus = await analysisService.waitForScanToFinish({
+      scanStatus = await analysisService.waitForScanToFinish({
         scanStatusUrl: result.scanStatusUrl,
         scanUrl: result.scanUrl,
         scanType,
@@ -335,7 +337,7 @@ class SOOSSCAAnalysis {
       soosLogger.always(`${exitCodeWithMessage.message} - exit ${exitCodeWithMessage.exitCode}`);
       exit(exitCodeWithMessage.exitCode);
     } catch (error) {
-      if (projectHash && branchHash && analysisId)
+      if (projectHash && branchHash && analysisId && (!scanStatus || !isScanDone(scanStatus)))
         await analysisService.updateScanStatus({
           clientId: this.args.clientId,
           projectHash,
