@@ -4,7 +4,6 @@ import { version } from "../package.json";
 import {
   IntegrationName,
   IntegrationType,
-  OutputFormat,
   PackageManagerType,
   SOOS_CONSTANTS,
   ScanStatus,
@@ -30,7 +29,7 @@ import { FileMatchTypeEnum } from "@soos-io/api-client/dist/enums";
 interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   directoriesToExclude: Array<string>;
   filesToExclude: Array<string>;
-  outputFormat: OutputFormat;
+  outputFormat: string; // TODO: PA-16483: Remove this
   packageManagers?: Array<string>;
   sourceCodePath: string;
   workingDirectory: string;
@@ -67,15 +66,11 @@ class SOOSSCAAnalysis {
       required: false,
     });
 
-    analysisArgumentParser.addEnumArgument(
-      analysisArgumentParser.argumentParser,
-      "--outputFormat",
-      OutputFormat,
-      {
-        help: "Output format for vulnerabilities: only the value SARIF is available at the moment",
-        required: false,
-      },
-    );
+    analysisArgumentParser.argumentParser.add_argument("--outputFormat", {
+      help: "OBSOLETE: use --exportFormat and --exportFileType instead.",
+      default: undefined,
+      required: false,
+    });
 
     analysisArgumentParser.addEnumArgument(
       analysisArgumentParser.argumentParser,
@@ -140,6 +135,13 @@ class SOOSSCAAnalysis {
     let analysisId: string | undefined;
     let scanStatusUrl: string | undefined;
     let scanStatus: ScanStatus | undefined;
+
+    // TODO: PA-16483: Remove this
+    if (this.args.outputFormat !== undefined) {
+      soosLogger.warn(
+        "No output will be generated. The --outputFormat parameter has been replaced with --exportFormat and --exportFileType, please use these parameters instead.",
+      );
+    }
 
     try {
       const result = await analysisService.setupScan({
@@ -316,15 +318,18 @@ class SOOSSCAAnalysis {
         scanType,
       });
 
-      if (this.args.outputFormat !== undefined) {
+      if (this.args.exportFormat !== undefined && this.args.exportFileType !== undefined) {
         await analysisService.generateFormattedOutput({
           clientId: this.args.clientId,
           projectHash: result.projectHash,
           projectName: this.args.projectName,
           branchHash: result.branchHash,
-          scanType,
           analysisId: result.analysisId,
-          outputFormat: this.args.outputFormat,
+          format: this.args.exportFormat,
+          fileType: this.args.exportFileType,
+          includeDependentProjects: false,
+          includeOriginalSbom: false,
+          includeVulnerabilities: false,
           workingDirectory: this.args.workingDirectory,
         });
       }
