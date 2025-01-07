@@ -33,6 +33,7 @@ interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   packageManagers?: Array<string>;
   sourceCodePath: string;
   workingDirectory: string;
+  outputDirectory: string;
   fileMatchType: FileMatchTypeEnum;
 }
 
@@ -118,6 +119,12 @@ class SOOSSCAAnalysis {
 
     analysisArgumentParser.argumentParser.add_argument("--workingDirectory", {
       help: "Absolute path where SOOS may write and read persistent files for the given build. eg Correct: /tmp/workspace/ | Incorrect: ./bin/start/",
+      default: process.cwd(),
+      required: false,
+    });
+
+    analysisArgumentParser.argumentParser.add_argument("--outputDirectory", {
+      help: "Absolute path where SOOS will write exported reports and SBOMs. eg Correct: /out/sbom/ | Incorrect: ./out/sbom/",
       default: process.cwd(),
       required: false,
     });
@@ -318,7 +325,11 @@ class SOOSSCAAnalysis {
         scanType,
       });
 
-      if (this.args.exportFormat !== undefined && this.args.exportFileType !== undefined) {
+      if (
+        isScanDone(scanStatus) &&
+        this.args.exportFormat !== undefined &&
+        this.args.exportFileType !== undefined
+      ) {
         await analysisService.generateFormattedOutput({
           clientId: this.args.clientId,
           projectHash: result.projectHash,
@@ -330,7 +341,7 @@ class SOOSSCAAnalysis {
           includeDependentProjects: false,
           includeOriginalSbom: false,
           includeVulnerabilities: false,
-          workingDirectory: this.args.workingDirectory,
+          workingDirectory: this.args.outputDirectory,
         });
       }
 
