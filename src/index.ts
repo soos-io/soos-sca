@@ -29,7 +29,6 @@ import { FileMatchTypeEnum } from "@soos-io/api-client/dist/enums";
 interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   directoriesToExclude: Array<string>;
   filesToExclude: Array<string>;
-  outputFormat: string; // TODO: PA-16483: Remove this
   packageManagers?: Array<string>;
   sourceCodePath: string;
   workingDirectory: string;
@@ -64,12 +63,6 @@ class SOOSSCAAnalysis {
       type: (value: string) => {
         return value.split(",").map((pattern) => pattern.trim());
       },
-      required: false,
-    });
-
-    analysisArgumentParser.argumentParser.add_argument("--outputFormat", {
-      help: "OBSOLETE: use --exportFormat and --exportFileType instead.",
-      default: undefined,
       required: false,
     });
 
@@ -142,13 +135,6 @@ class SOOSSCAAnalysis {
     let analysisId: string | undefined;
     let scanStatusUrl: string | undefined;
     let scanStatus: ScanStatus | undefined;
-
-    // TODO: PA-16483: Remove this
-    if (this.args.outputFormat !== undefined) {
-      soosLogger.warn(
-        "No output will be generated. The --outputFormat parameter has been replaced with --exportFormat and --exportFileType, please use these parameters instead.",
-      );
-    }
 
     try {
       const result = await analysisService.setupScan({
