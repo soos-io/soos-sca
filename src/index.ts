@@ -29,10 +29,10 @@ import { FileMatchTypeEnum } from "@soos-io/api-client/dist/enums";
 interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
   directoriesToExclude: Array<string>;
   filesToExclude: Array<string>;
-  outputFormat: string; // TODO: PA-16483: Remove this
   packageManagers?: Array<string>;
   sourceCodePath: string;
   workingDirectory: string;
+  outputDirectory: string;
   fileMatchType: FileMatchTypeEnum;
 }
 
@@ -63,12 +63,6 @@ class SOOSSCAAnalysis {
       type: (value: string) => {
         return value.split(",").map((pattern) => pattern.trim());
       },
-      required: false,
-    });
-
-    analysisArgumentParser.argumentParser.add_argument("--outputFormat", {
-      help: "OBSOLETE: use --exportFormat and --exportFileType instead.",
-      default: undefined,
       required: false,
     });
 
@@ -122,6 +116,12 @@ class SOOSSCAAnalysis {
       required: false,
     });
 
+    analysisArgumentParser.argumentParser.add_argument("--outputDirectory", {
+      help: "Absolute path where SOOS will write exported reports and SBOMs. eg Correct: /out/sbom/ | Incorrect: ./out/sbom/",
+      default: process.cwd(),
+      required: false,
+    });
+
     soosLogger.info("Parsing arguments");
     return analysisArgumentParser.parseArguments();
   }
@@ -135,13 +135,6 @@ class SOOSSCAAnalysis {
     let analysisId: string | undefined;
     let scanStatusUrl: string | undefined;
     let scanStatus: ScanStatus | undefined;
-
-    // TODO: PA-16483: Remove this
-    if (this.args.outputFormat !== undefined) {
-      soosLogger.warn(
-        "No output will be generated. The --outputFormat parameter has been replaced with --exportFormat and --exportFileType, please use these parameters instead.",
-      );
-    }
 
     try {
       const result = await analysisService.setupScan({
@@ -318,7 +311,11 @@ class SOOSSCAAnalysis {
         scanType,
       });
 
-      if (this.args.exportFormat !== undefined && this.args.exportFileType !== undefined) {
+      if (
+        isScanDone(scanStatus) &&
+        this.args.exportFormat !== undefined &&
+        this.args.exportFileType !== undefined
+      ) {
         await analysisService.generateFormattedOutput({
           clientId: this.args.clientId,
           projectHash: result.projectHash,
@@ -330,7 +327,7 @@ class SOOSSCAAnalysis {
           includeDependentProjects: false,
           includeOriginalSbom: false,
           includeVulnerabilities: false,
-          workingDirectory: this.args.workingDirectory,
+          workingDirectory: this.args.outputDirectory,
         });
       }
 
