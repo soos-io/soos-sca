@@ -53,11 +53,13 @@ See [Windows Batch File Gist](https://gist.github.com/soostech/d5f8c2a929902f302
 | `--clientId` |  | SOOS Client ID - get yours from [SOOS Integration](https://app.soos.io/integrate/sca). Uses `SOOS_API_CLIENT` env value if present. |
 | `--commitHash` |  | The commit hash value from the SCM System. |
 | `--directoriesToExclude` | `**/node_modules/**, "**/bin/**", "**/obj/**", "**/lib/**` | Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/** |
+| `--exportFormat`   |  | Write the scan result to this file format. Options: CsafVex, CycloneDx, Sarif, Spdx, SoosIssues, SoosLicenses, SoosPackages, SoosVulnerabilities |
+| `--exportFileType` |  | Write the scan result to this file type (when used with exportFormat). Options: Csv, Html, Json, Text, Xml                                       |
 | `--filesToExclude` |  | Listing of files or patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt |
 | `--logLevel`  |  | Minimum level to show logs: DEBUG, INFO, WARN, FAIL, ERROR. |
 | `--onFailure` | `continue_on_failure` | Action to perform when the scan fails. Options: fail_the_build, continue_on_failure. |
 | `--operatingEnvironment` |  | Set Operating environment for information purposes only. |
-| `--outputFormat` |  | Output format for vulnerabilities: only the value SARIF is available at the moment. |
+| `--outputDirectory` |  | Export file destination. | 
 | `--packageManagers` |  | A list of package managers, delimited by comma, to include when searching for manifest files. |
 | `--projectName` |  | Project Name - this is what will be displayed in the SOOS app. |
 | `--sarif` |  | Generates SARIF report. |
