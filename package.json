@@ -1,7 +1,7 @@
 {
   "name": "@soos-io/soos-sca",
-  "version": "4.0.15",
-  "description": "SOOS Security Analysis CI - Check for vulnerabilities, policy violations and more!",
+  "version": "4.0.16",
+  "description": "SOOS Core SCA Security Analysis - Check for vulnerabilities, licenses, policy violations and more! Register for your free trial at https://app.soos.io/register",
   "main": "bin/index.js",
   "scripts": {
     "setup:install": "npm install --registry https://registry.npmjs.org/",
@@ -42,7 +42,7 @@
   },
   "homepage": "https://github.com/soos-io/soos-sca#readme",
   "dependencies": {
-    "@soos-io/api-client": "1.1.8",
+    "@soos-io/api-client": "1.1.9",
     "argparse": "^2.0.1",
     "axios": "^1.7.4",
     "glob": "^11.0.1",
