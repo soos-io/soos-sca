@@ -44,7 +44,7 @@
   },
   "homepage": "https://github.com/soos-io/soos-sca#readme",
   "dependencies": {
-    "@soos-io/api-client": "1.2.0-pre.4",
+    "@soos-io/api-client": "1.2.0-pre.5",
     "argparse": "^2.0.1",
     "axios": "^1.7.4",
     "glob": "^11.0.1",
