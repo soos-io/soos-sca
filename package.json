@@ -1,6 +1,6 @@
 {
   "name": "@soos-io/soos-sca",
-  "version": "4.0.16",
+  "version": "4.0.17",
   "description": "SOOS Core SCA Security Analysis - Check for vulnerabilities, licenses, policy violations and more! Register for your free trial at https://app.soos.io/register",
   "main": "bin/index.js",
   "scripts": {
@@ -12,8 +12,10 @@
     "build:clean": "npx rimraf build",
     "format": "prettier ./src --check",
     "format:fix": "prettier ./src --write",
+    "lint": "eslint --max-warnings 0",
+    "lint:fix": "eslint --max-warnings 0 --fix",
     "typecheck": "tsc --noEmit",
-    "check": "npm run format && npm run typecheck && (npm outdated || exit 0)",
+    "check": "npm run format && npm run lint && npm run typecheck && (npm outdated || exit 0)",
     "link:soos-api-client": "npm link @soos-io/api-client && npm run build && npm link",
     "patch": "npm version patch --no-git-tag-version",
     "patch-api-client": "npm run patch && npm run setup:clean && npm install @soos-io/api-client@latest --registry https://registry.npmjs.org/ --save-exact && npm install --registry https://registry.npmjs.org/ && npm run check"
@@ -42,17 +44,21 @@
   },
   "homepage": "https://github.com/soos-io/soos-sca#readme",
   "dependencies": {
-    "@soos-io/api-client": "1.1.9",
+    "@soos-io/api-client": "1.2.0-pre.2",
     "argparse": "^2.0.1",
     "axios": "^1.7.4",
     "glob": "^11.0.1",
     "tslib": "^2.6.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.20.0",
     "@types/argparse": "^2.0.16",
     "@types/node": "^20.17.12",
+    "eslint": "^9.20.1",
+    "globals": "^16.0.0",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.1"
   },
   "bin": {
     "soos-sca": "bin/index.js"
