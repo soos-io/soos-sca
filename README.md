@@ -37,7 +37,7 @@ run `npm install --prefix ./soos @soos-io/soos-sca`
 Then run from the same terminal `node ./soos/node_modules/@soos-io/soos-sca/bin/index.js`
 
 ## Running the Script
-See [Script Knowlege Base Documentation](https://github.com/soos-io/kb-docs/blob/main/SCA/Script.md)
+See [Script Knowledge Base Documentation](https://github.com/soos-io/kb-docs/blob/main/SCA/Script.md)
 
 ### Linux Shell Script Example
 See [Linux GitHub Gist](https://gist.github.com/soostech/8c86376f84667b14a4901f4ed0726d5d)
