@@ -26,7 +26,7 @@ import AnalysisArgumentParser, {
 import { removeDuplicates } from "./utilities";
 import { FileMatchTypeEnum } from "@soos-io/api-client/dist/enums";
 
-interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
+interface ISCAAnalysisArgs extends IBaseScanArguments {
   directoriesToExclude: Array<string>;
   filesToExclude: Array<string>;
   packageManagers?: Array<string>;
@@ -37,9 +37,9 @@ interface SOOSSCAAnalysisArgs extends IBaseScanArguments {
 }
 
 class SOOSSCAAnalysis {
-  constructor(private args: SOOSSCAAnalysisArgs) {}
+  constructor(private args: ISCAAnalysisArgs) {}
 
-  static parseArgs(): SOOSSCAAnalysisArgs {
+  static parseArgs(): ISCAAnalysisArgs {
     const analysisArgumentParser = AnalysisArgumentParser.create(
       IntegrationName.SoosSca,
       IntegrationType.Script,
@@ -47,39 +47,38 @@ class SOOSSCAAnalysis {
       version,
     );
 
-    analysisArgumentParser.addBaseScanArguments();
-
-    analysisArgumentParser.argumentParser.add_argument("--directoriesToExclude", {
-      help: "Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/**",
-      type: (value: string) => {
-        return removeDuplicates(value.split(",").map((pattern) => pattern.trim()));
-      },
-      default: SOOS_SCA_CONSTANTS.DefaultDirectoriesToExclude,
-      required: false,
-    });
-
-    analysisArgumentParser.argumentParser.add_argument("--filesToExclude", {
-      help: "Listing of files or patterns patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt",
-      type: (value: string) => {
-        return value.split(",").map((pattern) => pattern.trim());
-      },
-      required: false,
-    });
-
-    analysisArgumentParser.addEnumArgument(
-      analysisArgumentParser.argumentParser,
-      "--fileMatchType",
-      FileMatchTypeEnum,
+    analysisArgumentParser.addArgument(
+      "directoriesToExclude",
+      "Listing of directories or patterns to exclude from the search for manifest files. eg: **bin/start/**, **/start/**",
       {
-        help: "The method to use to locate files for scanning, looking for manifest files and/or files to hash.",
-        required: false,
-        default: FileMatchTypeEnum.Manifest,
+        argParser: (value: string) => {
+          return removeDuplicates(value.split(",").map((pattern) => pattern.trim()));
+        },
+        defaultValue: SOOS_SCA_CONSTANTS.DefaultDirectoriesToExclude,
+      },
+    );
+
+    analysisArgumentParser.addArgument(
+      "filesToExclude",
+      "Listing of files or patterns patterns to exclude from the search for manifest files. eg: **/req**.txt/, **/requirements.txt",
+      {
+        argParser: (value: string) => {
+          return value.split(",").map((pattern) => pattern.trim());
+        },
       },
     );
 
     analysisArgumentParser.addEnumArgument(
-      analysisArgumentParser.argumentParser,
-      "--packageManagers",
+      "fileMatchType",
+      FileMatchTypeEnum,
+      "The method to use to locate files for scanning, looking for manifest files and/or files to hash.",
+      {
+        defaultValue: FileMatchTypeEnum.Manifest,
+      },
+    );
+
+    analysisArgumentParser.addEnumArgument(
+      "packageManagers",
       {
         [PackageManagerType.CFamily]: PackageManagerType.CFamily,
         [PackageManagerType.Dart]: PackageManagerType.Dart,
@@ -96,33 +95,36 @@ class SOOSSCAAnalysis {
         [PackageManagerType.Swift]: PackageManagerType.Swift,
         [PackageManagerType.Unity]: PackageManagerType.Unity,
       },
+      "A list of package managers, delimited by comma, to include when searching for manifest files.",
       {
-        help: "A list of package managers, delimited by comma, to include when searching for manifest files.",
-        required: false,
-        default: [],
+        allowMultipleValues: true,
       },
-      true,
     );
 
-    analysisArgumentParser.argumentParser.add_argument("--sourceCodePath", {
-      help: "Root path to begin recursive search for manifests.",
-      default: process.cwd(),
-      required: false,
-    });
+    analysisArgumentParser.addArgument(
+      "sourceCodePath",
+      "Root path to begin recursive search for manifests.",
+      {
+        defaultValue: process.cwd(),
+      },
+    );
 
-    analysisArgumentParser.argumentParser.add_argument("--workingDirectory", {
-      help: "Absolute path where SOOS may write and read persistent files for the given build. eg Correct: /tmp/workspace/ | Incorrect: ./bin/start/",
-      default: process.cwd(),
-      required: false,
-    });
+    analysisArgumentParser.addArgument(
+      "workingDirectory",
+      "Absolute path where SOOS may write and read persistent files for the given build. eg Correct: /tmp/workspace/ | Incorrect: ./bin/start/",
+      {
+        defaultValue: process.cwd(),
+      },
+    );
 
-    analysisArgumentParser.argumentParser.add_argument("--outputDirectory", {
-      help: "Absolute path where SOOS will write exported reports and SBOMs. eg Correct: /out/sbom/ | Incorrect: ./out/sbom/",
-      default: process.cwd(),
-      required: false,
-    });
+    analysisArgumentParser.addArgument(
+      "outputDirectory",
+      "Absolute path where SOOS will write exported reports and SBOMs. eg Correct: /out/sbom/ | Incorrect: ./out/sbom/",
+      {
+        defaultValue: process.cwd(),
+      },
+    );
 
-    soosLogger.info("Parsing arguments");
     return analysisArgumentParser.parseArguments();
   }
 
