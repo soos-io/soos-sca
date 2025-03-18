@@ -24,7 +24,11 @@ import AnalysisArgumentParser, {
   IBaseScanArguments,
 } from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
 import { removeDuplicates } from "./utilities";
-import { FileMatchTypeEnum } from "@soos-io/api-client/dist/enums";
+import {
+  AttributionFileTypeEnum,
+  AttributionFormatEnum,
+  FileMatchTypeEnum,
+} from "@soos-io/api-client/dist/enums";
 
 interface ISCAAnalysisArgs extends IBaseScanArguments {
   directoriesToExclude: Array<string>;
@@ -315,8 +319,8 @@ class SOOSSCAAnalysis {
 
       if (
         isScanDone(scanStatus) &&
-        this.args.exportFormat !== undefined &&
-        this.args.exportFileType !== undefined
+        this.args.exportFormat !== AttributionFormatEnum.Unknown &&
+        this.args.exportFileType !== AttributionFileTypeEnum.Unknown
       ) {
         await analysisService.generateFormattedOutput({
           clientId: this.args.clientId,
