@@ -66,7 +66,6 @@ See [Windows Batch File Gist](https://gist.github.com/soostech/d5f8c2a929902f302
 | `--outputDirectory` |  | Export file destination. | 
 | `--packageManagers` |  | A list of package managers, delimited by comma, to include when searching for manifest files. |
 | `--projectName` |  | Project Name - this is what will be displayed in the SOOS app. |
-| `--sarif` |  | Generates SARIF report. |
 | `--scriptVersion` |  | None provided. |
 | `--sourceCodePath` | `process.cwd()` | Root path to begin recursive search for manifests. |
 | `--workingDirectory` | `process.cwd()` | Absolute path where SOOS may write and read persistent files for the given build. eg Correct: /tmp/workspace/ | Incorrect: ./bin/start/ |
