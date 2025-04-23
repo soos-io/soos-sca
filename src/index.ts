@@ -191,41 +191,38 @@ class SOOSSCAAnalysis {
       const manifestFiles = manifestsAndHashableFiles.manifestFiles ?? [];
       const soosHashesManifests = manifestsAndHashableFiles.hashManifests ?? [];
 
-      let errorMessage = null;
-
+      let noFilesMessage = null;
       if (this.args.fileMatchType === FileMatchTypeEnum.Manifest && manifestFiles.length === 0) {
-        errorMessage =
+        noFilesMessage =
           "No valid files found, cannot continue. For more help, please visit https://kb.soos.io/error-no-valid-manifests-found";
-      }
-
-      if (
+      } else if (
         this.args.fileMatchType === FileMatchTypeEnum.FileHash &&
         soosHashesManifests.length === 0
       ) {
-        errorMessage =
+        noFilesMessage =
           "No valid files to hash were found, cannot continue. For more help, please visit https://kb.soos.io/error-no-valid-files-to-hash-found";
-      }
-
-      if (
+      } else if (
         this.args.fileMatchType === FileMatchTypeEnum.ManifestAndFileHash &&
         soosHashesManifests.length === 0 &&
         manifestFiles.length === 0
       ) {
-        errorMessage =
+        noFilesMessage =
           "No valid files found, cannot continue. For more help, please visit https://kb.soos.io/error-no-valid-manifests-found and https://kb.soos.io/error-no-valid-files-to-hash-found";
       }
 
-      if (errorMessage) {
+      if (noFilesMessage) {
         await analysisService.updateScanStatus({
+          analysisId,
           clientId: this.args.clientId,
           projectHash,
           branchHash,
           scanType,
-          analysisId: analysisId,
-          status: ScanStatus.Incomplete,
-          message: errorMessage,
-          scanStatusUrl: result.scanStatusUrl,
+          status: ScanStatus.NoFiles,
+          message: noFilesMessage,
+          scanStatusUrl,
         });
+        soosLogger.error(noFilesMessage);
+        soosLogger.always(`${noFilesMessage} - exit 1`);
         exit(1);
       }
 
@@ -290,15 +287,17 @@ class SOOSSCAAnalysis {
 
       if (allUploadsFailed) {
         await analysisService.updateScanStatus({
+          analysisId,
           clientId: this.args.clientId,
           projectHash,
           branchHash,
           scanType,
-          analysisId: analysisId,
-          status: ScanStatus.Incomplete,
-          message: `Error uploading manifests.`,
-          scanStatusUrl: result.scanStatusUrl,
+          status: ScanStatus.NoFiles,
+          message: "All manifest uploads were unsuccessful.",
+          scanStatusUrl,
         });
+        soosLogger.error(noFilesMessage);
+        soosLogger.always(`${noFilesMessage} - exit 1`);
         exit(1);
       }
 
