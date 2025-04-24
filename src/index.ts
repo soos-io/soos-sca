@@ -286,6 +286,8 @@ class SOOSSCAAnalysis {
       }
 
       if (allUploadsFailed) {
+        noFilesMessage =
+          "All manifest uploads were unsuccessful. For more help, please visit https://kb.soos.io/error-no-valid-manifests-found";
         await analysisService.updateScanStatus({
           analysisId,
           clientId: this.args.clientId,
@@ -293,7 +295,7 @@ class SOOSSCAAnalysis {
           branchHash,
           scanType,
           status: ScanStatus.NoFiles,
-          message: "All manifest uploads were unsuccessful.",
+          message: noFilesMessage,
           scanStatusUrl,
         });
         soosLogger.error(noFilesMessage);
