@@ -176,8 +176,6 @@ class SOOSSCAAnalysis {
       analysisId = result.analysisId;
       scanStatusUrl = result.scanStatusUrl;
 
-      soosLogger.logLineSeparator();
-
       const manifestsAndHashableFiles = await analysisService.findManifestsAndHashableFiles({
         clientId: this.args.clientId,
         projectHash,
@@ -303,7 +301,6 @@ class SOOSSCAAnalysis {
         exit(1);
       }
 
-      soosLogger.logLineSeparator();
       await analysisService.startScan({
         clientId: this.args.clientId,
         projectHash,
@@ -409,7 +406,7 @@ class SOOSSCAAnalysis {
           2,
         ),
       );
-      soosLogger.logLineSeparator();
+
       const soosSCAAnalysis = new SOOSSCAAnalysis(args);
       await soosSCAAnalysis.runAnalysis();
     } catch (error) {
