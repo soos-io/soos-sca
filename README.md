@@ -36,13 +36,13 @@ run `npm install --prefix ./soos @soos-io/soos-sca`
 
 Then run from the same terminal `node ./soos/node_modules/@soos-io/soos-sca/bin/index.js`
 
-## Running the Script
-See [Script Knowledge Base Documentation](https://github.com/soos-io/kb-docs/blob/main/SCA/Script.md)
+## Running the CLI
+See [CLI Knowledge Base Documentation](https://github.com/soos-io/kb-docs/blob/main/SCA/Script.md)
 
-### Linux Shell Script Example
+### Linux Shell CLI Example
 See [Linux GitHub Gist](https://gist.github.com/soostech/8c86376f84667b14a4901f4ed0726d5d)
 
-### Windows CMD Script Example
+### Windows CMD CLI Example
 See [Windows Batch File Gist](https://gist.github.com/soostech/d5f8c2a929902f30231a0e0699474af5)
 
 ### Client Parameters
