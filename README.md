@@ -12,8 +12,8 @@ If you maintain an Open Source project, sign up for the Free as in Beer [SOOS Co
 NPM package to run SOOS Core SCA
 
 ## SOOS Badge Status
-[![Dependency Vulnerabilities](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi-hooks.soos.io%2Fapi%2Fshieldsio-badges%3FbadgeType%3DDependencyVulnerabilities%26pid%3D6s2jxs9py%26branchName%3Dmain)](https://app.soos.io)
-[![Out Of Date Dependencies](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi-hooks.soos.io%2Fapi%2Fshieldsio-badges%3FbadgeType%3DOutOfDateDependencies%26pid%3D6s2jxs9py%26branchName%3Dmain)](https://app.soos.io)
+[![Dependency Vulnerabilities](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi-hooks.soos.io%2Fapi%2Fshieldsio-badges%3FbadgeType%3DDependencyVulnerabilities%26pid%3Dvuvlvqa79%26)](https://app.soos.io)
+[![Out Of Date Dependencies](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi-hooks.soos.io%2Fapi%2Fshieldsio-badges%3FbadgeType%3DOutOfDateDependencies%26pid%3Dvuvlvqa79%26)](https://app.soos.io)
 
 ## Supported Languages and Package Managers
 Our full list of supported manifest formats can be found [here](https://kb.soos.io/supported-languages-and-files).
