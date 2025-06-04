@@ -39,7 +39,7 @@ Then run from the same terminal `node ./soos/node_modules/@soos-io/soos-sca/bin/
 ## Running the CLI
 See [CLI Knowledge Base Documentation](https://github.com/soos-io/kb-docs/blob/main/SCA/Script.md)
 
-### Linux Shell Script Example
+### Linux Shell CLI Example
 See [Linux GitHub Gist](https://gist.github.com/soostech/8c86376f84667b14a4901f4ed0726d5d)
 
 ### Windows CMD CLI Example
