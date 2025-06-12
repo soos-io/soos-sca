@@ -46,6 +46,7 @@
   "homepage": "https://github.com/soos-io/soos-sca#readme",
   "dependencies": {
     "@soos-io/api-client": "1.5.5",
+    "brace-expansion": "2.0.0",
     "tslib": "^2.6.2"
   },
   "devDependencies": {
@@ -60,7 +61,7 @@
   },
   "overrides": {
     "glob": "^11.0.2",
-    "brace-expansion": "2.0.1"
+    "brace-expansion": "2.0.0"
   },
   "bin": {
     "soos-sca": "bin/index.js"
