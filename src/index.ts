@@ -1,11 +1,9 @@
 #!/usr/bin/env node
-import * as Path from "path";
 import { version } from "../package.json";
 import {
   IntegrationName,
   IntegrationType,
   PackageManagerType,
-  SOOS_CONSTANTS,
   ScanStatus,
   ScanType,
   soosLogger,
@@ -13,13 +11,13 @@ import {
 import {
   obfuscateProperties,
   getAnalysisExitCodeWithMessage,
-  StringUtilities,
   isScanDone,
+  obfuscateCommandLine,
+  reassembleCommandLine,
 } from "@soos-io/api-client/dist/utilities";
 import { SOOS_SCA_CONSTANTS } from "./constants";
 import { exit } from "process";
-import { IUploadManifestFilesResponse } from "@soos-io/api-client/dist/api/SOOSAnalysisApiClient";
-import AnalysisService, { IManifestFile } from "@soos-io/api-client/dist/services/AnalysisService";
+import AnalysisService from "@soos-io/api-client/dist/services/AnalysisService";
 import AnalysisArgumentParser, {
   IBaseScanArguments,
 } from "@soos-io/api-client/dist/services/AnalysisArgumentParser";
@@ -69,6 +67,7 @@ class SOOSSCAAnalysis {
         argParser: (value: string) => {
           return value.split(",").map((pattern) => pattern.trim());
         },
+        defaultValue: [],
       },
     );
 
@@ -156,19 +155,21 @@ class SOOSSCAAnalysis {
         integrationType: this.args.integrationType,
         appVersion: this.args.appVersion,
         scriptVersion: this.args.scriptVersion,
-        contributingDeveloperAudit:
-          !this.args.contributingDeveloperId ||
-          !this.args.contributingDeveloperSource ||
-          !this.args.contributingDeveloperSourceName
-            ? []
-            : [
-                {
-                  contributingDeveloperId: this.args.contributingDeveloperId,
-                  source: this.args.contributingDeveloperSource,
-                  sourceName: this.args.contributingDeveloperSourceName,
-                },
-              ],
+        contributingDeveloperAudit: [
+          {
+            contributingDeveloperId: this.args.contributingDeveloperId,
+            source: this.args.contributingDeveloperSource,
+            sourceName: this.args.contributingDeveloperSourceName,
+          },
+        ],
         scanType,
+        commandLine:
+          process.argv.length > 2
+            ? obfuscateCommandLine(
+                reassembleCommandLine(process.argv.slice(2)),
+                SOOS_SCA_CONSTANTS.ObfuscatedArguments.map((a) => `--${a}`),
+              )
+            : null,
       });
 
       projectHash = result.projectHash;
@@ -176,7 +177,7 @@ class SOOSSCAAnalysis {
       analysisId = result.analysisId;
       scanStatusUrl = result.scanStatusUrl;
 
-      const manifestsAndHashableFiles = await analysisService.findManifestsAndHashableFiles({
+      const { manifestFiles, hashManifests } = await analysisService.findManifestsAndHashableFiles({
         clientId: this.args.clientId,
         projectHash,
         filesToExclude: this.args.filesToExclude,
@@ -186,119 +187,19 @@ class SOOSSCAAnalysis {
         fileMatchType: this.args.fileMatchType,
       });
 
-      const manifestFiles = manifestsAndHashableFiles.manifestFiles ?? [];
-      const soosHashesManifests = manifestsAndHashableFiles.hashManifests ?? [];
-
-      let noFilesMessage = null;
-      if (this.args.fileMatchType === FileMatchTypeEnum.Manifest && manifestFiles.length === 0) {
-        noFilesMessage =
-          "No valid files found, cannot continue. For more help, please visit https://kb.soos.io/error-no-valid-manifests-found";
-      } else if (
-        this.args.fileMatchType === FileMatchTypeEnum.FileHash &&
-        soosHashesManifests.length === 0
-      ) {
-        noFilesMessage =
-          "No valid files to hash were found, cannot continue. For more help, please visit https://kb.soos.io/error-no-valid-files-to-hash-found";
-      } else if (
-        this.args.fileMatchType === FileMatchTypeEnum.ManifestAndFileHash &&
-        soosHashesManifests.length === 0 &&
-        manifestFiles.length === 0
-      ) {
-        noFilesMessage =
-          "No valid files found, cannot continue. For more help, please visit https://kb.soos.io/error-no-valid-manifests-found and https://kb.soos.io/error-no-valid-files-to-hash-found";
-      }
-
-      if (noFilesMessage) {
-        await analysisService.updateScanStatus({
-          analysisId,
-          clientId: this.args.clientId,
-          projectHash,
-          branchHash,
-          scanType,
-          status: ScanStatus.NoFiles,
-          message: noFilesMessage,
-          scanStatusUrl,
-        });
-        soosLogger.error(noFilesMessage);
-        soosLogger.always(`${noFilesMessage} - exit 1`);
-        exit(1);
-      }
-
-      const filesToUpload = manifestFiles.slice(0, SOOS_CONSTANTS.FileUploads.MaxManifests);
-      const hasMoreThanMaximumManifests =
-        manifestFiles.length > SOOS_CONSTANTS.FileUploads.MaxManifests;
-      if (hasMoreThanMaximumManifests) {
-        const filesToSkip = manifestFiles.slice(SOOS_CONSTANTS.FileUploads.MaxManifests);
-        const filesDetectedString = StringUtilities.pluralizeTemplate(
-          manifestFiles.length,
-          "file was",
-          "files were",
-        );
-        const filesSkippedString = StringUtilities.pluralizeTemplate(filesToSkip.length, "file");
-        soosLogger.info(
-          `The maximum number of manifest per scan is ${SOOS_CONSTANTS.FileUploads.MaxManifests}. ${filesDetectedString} detected, and ${filesSkippedString} will be not be uploaded. \n`,
-          `The following manifests will not be included in the scan: \n`,
-          filesToSkip.map((file) => `  "${file.name}": "${file.path}"`).join("\n"),
-        );
-      }
-
-      const manifestsByPackageManager = filesToUpload.reduce<Record<string, Array<IManifestFile>>>(
-        (accumulator, file) => {
-          const packageManagerFiles =
-            (accumulator[file.packageManager] as Array<IManifestFile> | undefined) ?? [];
-          return {
-            ...accumulator,
-            [file.packageManager]: packageManagerFiles.concat(file),
-          };
-        },
-        {},
-      );
-
-      let allUploadsFailed = true;
-      for (const [packageManager, files] of Object.entries(manifestsByPackageManager)) {
-        try {
-          // TODO: PA-14211 can we add the soos_hashes.json directly
-          const manifestUploadResponse = await this.uploadManifestFiles({
-            analysisService,
-            clientId: this.args.clientId,
-            projectHash,
-            branchHash,
-            analysisId,
-            manifestFiles: files.map((f) => f.path),
-            hasMoreThanMaximumManifests,
-          });
-
-          soosLogger.info(
-            `${packageManager} Manifest Files: \n`,
-            `  ${manifestUploadResponse.message} \n`,
-            manifestUploadResponse.manifests
-              ?.map((m) => `  ${m.name}: ${m.statusMessage}`)
-              .join("\n"),
-          );
-
-          allUploadsFailed = false;
-        } catch (e: unknown) {
-          // NOTE: we continue on to the other package managers
-          soosLogger.warn(e instanceof Error ? e.message : (e as string));
-        }
-      }
-
-      if (allUploadsFailed) {
-        noFilesMessage =
-          "All manifest uploads were unsuccessful. For more help, please visit https://kb.soos.io/error-no-valid-manifests-found";
-        await analysisService.updateScanStatus({
-          analysisId,
-          clientId: this.args.clientId,
-          projectHash,
-          branchHash,
-          scanType,
-          status: ScanStatus.NoFiles,
-          message: noFilesMessage,
-          scanStatusUrl,
-        });
-        soosLogger.error(noFilesMessage);
-        soosLogger.always(`${noFilesMessage} - exit 1`);
-        exit(1);
+      const { exitCode } = await analysisService.addManifestsAndHashableFilesToScan({
+        clientId: this.args.clientId,
+        projectHash: result.projectHash,
+        branchHash: result.branchHash,
+        analysisId: result.analysisId,
+        scanType,
+        scanStatusUrl: result.scanStatusUrl,
+        fileMatchType: this.args.fileMatchType,
+        manifestFiles,
+        hashManifests,
+      });
+      if (exitCode !== 0) {
+        exit(exitCode);
       }
 
       await analysisService.startScan({
@@ -335,14 +236,15 @@ class SOOSSCAAnalysis {
         });
       }
 
-      const exitCodeWithMessage = getAnalysisExitCodeWithMessage(
+      const { exitCode: analysisExitCode, message } = getAnalysisExitCodeWithMessage(
         scanStatus,
         this.args.integrationName,
         this.args.onFailure,
       );
-      soosLogger.always(`${exitCodeWithMessage.message} - exit ${exitCodeWithMessage.exitCode}`);
-      exit(exitCodeWithMessage.exitCode);
-    } catch (error) {
+      soosLogger.always(`${message} - exit ${analysisExitCode}`);
+      exit(analysisExitCode);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : (e as string);
       if (projectHash && branchHash && analysisId && (!scanStatus || !isScanDone(scanStatus)))
         await analysisService.updateScanStatus({
           clientId: this.args.clientId,
@@ -351,47 +253,13 @@ class SOOSSCAAnalysis {
           scanType,
           analysisId: analysisId,
           status: ScanStatus.Error,
-          message: "Error while performing scan.",
+          message: `Error while performing scan: ${errorMessage}`,
           scanStatusUrl,
         });
-      soosLogger.error(error);
-      soosLogger.always(`${error} - exit 1`);
+      soosLogger.error(errorMessage);
+      soosLogger.always(`${errorMessage} - exit 1`);
       exit(1);
     }
-  }
-
-  private async uploadManifestFiles({
-    analysisService,
-    clientId,
-    projectHash,
-    branchHash,
-    analysisId,
-    manifestFiles,
-    hasMoreThanMaximumManifests,
-  }: {
-    analysisService: AnalysisService;
-    clientId: string;
-    projectHash: string;
-    branchHash: string;
-    analysisId: string;
-    manifestFiles: Array<string>;
-    hasMoreThanMaximumManifests: boolean;
-  }): Promise<IUploadManifestFilesResponse> {
-    const formData = await analysisService.getAnalysisFilesAsFormData(
-      manifestFiles,
-      Path.resolve(this.args.sourceCodePath),
-    );
-
-    const response = await analysisService.analysisApiClient.uploadManifestFiles({
-      clientId,
-      projectHash,
-      branchHash,
-      analysisId,
-      manifestFiles: formData,
-      hasMoreThanMaximumManifests,
-    });
-
-    return response;
   }
 
   static async createAndRun(): Promise<void> {
