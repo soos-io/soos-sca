@@ -257,7 +257,7 @@ class SOOSSCAAnalysis {
           scanStatusUrl,
         });
       soosLogger.error(errorMessage);
-      soosLogger.always(`${errorMessage} - exit 1`);
+      soosLogger.always(`Error: ${errorMessage} - exit 1`);
       exit(1);
     }
   }
