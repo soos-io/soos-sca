@@ -1,6 +1,6 @@
 {
   "name": "@soos-io/soos-sca",
-  "version": "4.2.6",
+  "version": "4.2.7",
   "description": "SOOS Core SCA Security Analysis - Check for vulnerabilities, licenses, policy violations and more! Register for your free trial at https://app.soos.io/register",
   "main": "bin/index.js",
   "scripts": {
