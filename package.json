@@ -1,15 +1,15 @@
 {
   "name": "@soos-io/soos-sca",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "description": "SOOS Core SCA Security Analysis - Check for vulnerabilities, licenses, policy violations and more! Register for your free trial at https://app.soos.io/register",
   "main": "bin/index.js",
   "scripts": {
     "setup:install": "npm install --registry https://registry.npmjs.org/",
     "setup:clean-install": "npm ci",
-    "setup:update": "npx npm-check -u",
-    "setup:clean": "npx rimraf node_modules && npx rimraf package-lock.json",
+    "setup:update": "npx -y npm-check -u",
+    "setup:clean": "npx -y rimraf node_modules && npx rimraf package-lock.json",
     "build": "tsc",
-    "build:clean": "npx rimraf bin",
+    "build:clean": "npx -y rimraf bin",
     "format": "prettier ./src --check",
     "format:fix": "prettier ./src --write",
     "lint": "eslint --max-warnings 0",
@@ -45,21 +45,21 @@
   },
   "homepage": "https://github.com/soos-io/soos-sca#readme",
   "dependencies": {
-    "@soos-io/api-client": "1.10.2",
+    "@soos-io/api-client": "1.10.3",
     "tslib": "^2.6.2"
   },
   "overrides": {
-    "minimatch": "^10.2.2"
+    "minimatch": "^10.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.3",
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.11.0",
     "eslint": "^9.39.3",
-    "globals": "^17.0.0",
+    "globals": "^17.4.0",
     "knip": "^5.47.0",
     "prettier": "^3.5.2",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.39.1"
+    "typescript-eslint": "^8.56.1"
   },
   "bin": {
     "soos-sca": "bin/index.js"
