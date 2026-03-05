@@ -1,0 +1,31 @@
+name: Integration Test on PR
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Link
+        run: npm link
+
+      - name: Run SOOS SCA
+        run: soos-sca --clientId=${{ secrets.SOOS_CLIENT_ID_DEV }} --apiKey=${{ secrets.SOOS_API_KEY_DEV }} --apiURL="https://dev-api.soos.io/api/" --projectName="${{ github.event.repository.name }} test"
