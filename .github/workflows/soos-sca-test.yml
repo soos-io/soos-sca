@@ -27,5 +27,5 @@ jobs:
       - name: Link
         run: npm link
 
-      - name: Run SOOS SBOM
+      - name: Run SOOS SCA
         run: soos-sca --clientId=${{ secrets.SOOS_CLIENT_ID_DEV }} --apiKey=${{ secrets.SOOS_API_KEY_DEV }} --apiURL="https://dev-api.soos.io/api/" --projectName="${{ github.event.repository.name }} test"
