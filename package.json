@@ -1,10 +1,10 @@
 {
   "name": "@soos-io/soos-sca",
-  "version": "4.3.2",
+  "version": "4.3.3",
   "description": "SOOS Core SCA Security Analysis - Check for vulnerabilities, licenses, policy violations and more! Register for your free trial at https://app.soos.io/register",
   "main": "bin/index.js",
   "scripts": {
-    "setup:install": "npm install --registry https://registry.npmjs.org/",
+    "setup:install": "npm install --ignore-scripts --registry https://registry.npmjs.org/",
     "setup:clean-install": "npm ci",
     "setup:update": "npx -y npm-check -u",
     "setup:clean": "npx -y rimraf node_modules && npx rimraf package-lock.json",
@@ -18,7 +18,7 @@
     "check": "npm run format && npm run lint && npm run typecheck && (npm outdated || exit 0)",
     "link:soos-api-client": "npm link @soos-io/api-client && npm run build && npm link",
     "patch": "npm version patch --no-git-tag-version",
-    "patch-api-client": "npm run patch && npm run setup:clean && npm install @soos-io/api-client@latest --registry https://registry.npmjs.org/ --save-exact && npm install --registry https://registry.npmjs.org/ && npm run check",
+    "patch-api-client": "npm run patch && npm run setup:clean && npm install @soos-io/api-client@latest --registry https://registry.npmjs.org/ --save-exact && npm install --ignore-scripts --registry https://registry.npmjs.org/ && npm run check",
     "knip": "knip"
   },
   "repository": {
@@ -45,20 +45,20 @@
   },
   "homepage": "https://github.com/soos-io/soos-sca#readme",
   "dependencies": {
-    "@soos-io/api-client": "1.10.4",
+    "@soos-io/api-client": "1.10.5",
     "tslib": "^2.6.2"
   },
   "overrides": {
     "minimatch": "^10.2.4"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.11.0",
-    "eslint": "^9.39.3",
+    "eslint": "^10.2.0",
     "globals": "^17.4.0",
-    "knip": "^5.47.0",
+    "knip": "^6.3.0",
     "prettier": "^3.5.2",
-    "typescript": "^5.9.2",
+    "typescript": "^6.0.2",
     "typescript-eslint": "^8.56.1"
   },
   "bin": {

@@ -32,7 +32,7 @@ run `npm i -g @soos-io/soos-sca@latest`
 Then Run `soos-sca` from any terminal and add the parameters you want.
 
 ### Locally
-run `npm install --prefix ./soos @soos-io/soos-sca`
+run `npm install --ignore-scripts --prefix ./soos @soos-io/soos-sca`
 
 Then run from the same terminal `node ./soos/node_modules/@soos-io/soos-sca/bin/index.js`
 
